@@ -1,6 +1,8 @@
 const Client = require('../models/Client');
 const Region = require('../models/Region');
 const Staff = require('../models/Staff');
+const ClientUser = require('../models/clientUsers');
+const sendEmail = require('../utils/sendEmail');
 
 // Create a new client registration
 exports.registerClient = async (req, res) => {
@@ -108,17 +110,115 @@ exports.getPendingClient = async (req, res) => {
   res.json(clients);
 };
 
-// GET /api/users/:id
+
 exports.getClientById = async (req, res) => {
   try {
-    const client = await Client.findOne({ registrationId: req.params.id });
-    if (!client) return res.status(404).json({ message: 'Client not found' });
-    res.json(client);
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: 'Registration ID is required' });
+    }
+
+    const client = await Client.findOne({ registrationId: id }).populate('assignedReviewer');
+
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    res.status(200).json({
+      message: 'Client details fetched successfully',
+      data: client
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error getting client by ID:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
+exports.clientApprovedMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const client = await Client.findOne({ registrationId: id}).populate('assignedReviewer');
+    const user = await Staff.findById(client.assignedReviewer);
+    if (client.status == 'Approved') {
+      return res.status(404).json({ message: 'Client already approved' });
+    }
+    if (client.status == 'Rejected') {
+      return res.status(404).json({ message: 'Client already rejected' });
+    }
+    
+    
+
+    const clientEmail = client.personalInfo.email;
+    const password = generateTemporaryPassword();
+
+    const message =  `Welcome to Loan Management System
+      Your account has been created successfully.
+      Username: ${clientEmail}
+      Password: ${password}
+      Please log in and change your password after first login.`;
+
+    await sendEmail(clientEmail, 'Client approved', message);
+
+    client.status = 'Approved';
+    client.approvedAt = new Date(); // optional timestamp
+    await client.save();
+
+    const clientuser = new ClientUser({
+      clientId: client._id,
+      username: clientEmail,
+      email: clientEmail,
+      password: password, // Will be hashed automatically
+      verifiedBy: user._id,
+      role: 'client',
+      isActive: true
+    });
+
+    await clientuser.save();
+
+    res.status(200).json({ message: 'Email sent successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error sending email', error: error.message });
+  }
+};
+
+function generateTemporaryPassword(length = 8) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$';
+  return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+exports.clientRejectedMessage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const client = await Client.findOne({ registrationId: id });
+    if (client.status == 'Approved') {
+      return res.status(404).json({ message: 'Client already approved' });
+    }
+    if (client.status == 'Rejected') {
+      return res.status(404).json({ message: 'Client already rejected' });
+    }
+
+    const clientEmail = client.personalInfo.email;
+
+    const message = `Welcome to Loan Management System
+      Your account has been created successfully.`;
+
+    await sendEmail(clientEmail, 'Client rejected', message);
+
+    client.status = 'Rejected';
+    client.rejectedAt = new Date(); // optional timestamp
+    await client.save();
+
+    res.status(200).json({ message: 'Email sent successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error sending email', error: error.message });
+  }
+};
+
+///// Summary endpoint to get total users, active users, pending registrations, and rejected registrations
 // GET /api/summary
 exports.getSummary = async (req, res) => {
   try {
@@ -139,20 +239,6 @@ exports.getSummary = async (req, res) => {
   }
 };
 
-// Get a specific client by ID
-exports.getClientById = async (req, res) => {
-  try {
-    const client = await Client.findById(req.params.id).populate('assignedReviewer', 'name email');
-
-    if (!client) {
-      return res.status(404).json({ message: 'Client not found' });
-    }
-
-    res.status(200).json(client);
-  } catch (error) {
-    res.status(500).json({ message: 'Error retrieving client', error: error.message });
-  }
-};
 
 // Update client status (approve/reject)
 exports.updateClientStatus = async (req, res) => {
