@@ -6,8 +6,10 @@ router.post('/register', clientController.registerClient);
 router.get('/client', clientController.getClients);
 router.get('/pending', clientController.getPendingClient);
 router.get('/all', clientController.getAllClients);
-
 router.get('/:id', clientController.getClientById);
-router.patch('/:id/status', clientController.updateClientStatus);
+router.get('/:id/approve', clientController.clientApprovedMessage);
+router.get('/:id/reject', clientController.clientRejectedMessage);
+
+
 
 module.exports = router;
