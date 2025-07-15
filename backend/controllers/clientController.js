@@ -67,7 +67,15 @@ exports.registerClient = async (req, res) => {
 
 exports.getAllClients = async (req, res) => {
   try {
-    const clients = await Client.find().populate('assignedReviewer');
+   // const clients = await Client.find().populate('assignedReviewer');
+    const clients = await Client.find()
+        .populate({
+          path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
+          populate: {
+            path: 'region',         // Level 2: Populate the region inside the reviewer
+            model: 'Region'         // Optional if you already defined 'ref' in User schema
+          }
+        });
     res.status(200).json(clients);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching clients', error: error.message });
@@ -119,7 +127,14 @@ exports.getClientById = async (req, res) => {
       return res.status(400).json({ message: 'Registration ID is required' });
     }
 
-    const client = await Client.findOne({ registrationId: id }).populate('assignedReviewer');
+    const client = await Client.findOne({ registrationId: id })
+        .populate({
+          path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
+          populate: {
+            path: 'region',         // Level 2: Populate the region inside the reviewer
+            model: 'Region'         // Optional if you already defined 'ref' in User schema
+          }
+        });
 
 
     if (!client) {
@@ -160,7 +175,7 @@ exports.clientApprovedMessage = async (req, res) => {
       Password: ${password}
       Please log in and change your password after first login.`;
 
-    await sendEmail(clientEmail, 'Client approved', message);
+    //await sendEmail(clientEmail, 'Client approved', message);
 
     client.status = 'Approved';
     client.approvedAt = new Date(); // optional timestamp
@@ -206,7 +221,7 @@ exports.clientRejectedMessage = async (req, res) => {
     const message = `Welcome to Loan Management System
       Your account has been created successfully.`;
 
-    await sendEmail(clientEmail, 'Client rejected', message);
+    //await sendEmail(clientEmail, 'Client rejected', message);
 
     client.status = 'Rejected';
     client.rejectedAt = new Date(); // optional timestamp
