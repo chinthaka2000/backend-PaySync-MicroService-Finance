@@ -11,8 +11,8 @@ const clientSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ['Pending Review', 'Approved', 'Rejected'],
-    default: 'Pending Review',
+    enum: ['Pending', 'Approved', 'Rejected'],
+    default: 'Pending',
   },
 
   personalInfo: {
