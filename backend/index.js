@@ -11,6 +11,7 @@ const StaffDetails = require('./models/StaffDetails'); // make sure this line is
 
 const bcrypt = require("bcrypt");
 const clientRoutes = require('./routes/clientRoutes');
+const cors = require('cors');
 
 
 
@@ -19,13 +20,14 @@ const PORT = process.env.PORT || 5000;
 connectDB();
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Loan Management System API');
 });
 
-app.use('/api/clients', clientRoutes);
+app.use('/clientsAPI', clientRoutes);
 
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
