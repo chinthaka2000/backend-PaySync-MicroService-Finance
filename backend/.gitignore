@@ -12,6 +12,6 @@ npm-debug.log*
 # OS-specific
 .DS_Store
 Thumbs.db
-
+.kiro/*
 # Optional: if you're using VS Code
 .vscode/

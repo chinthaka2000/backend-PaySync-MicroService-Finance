@@ -67,15 +67,15 @@ exports.registerClient = async (req, res) => {
 
 exports.getAllClients = async (req, res) => {
   try {
-   // const clients = await Client.find().populate('assignedReviewer');
+    // const clients = await Client.find().populate('assignedReviewer');
     const clients = await Client.find()
-        .populate({
-          path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
-          populate: {
-            path: 'region',         // Level 2: Populate the region inside the reviewer
-            model: 'Region'         // Optional if you already defined 'ref' in User schema
-          }
-        });
+      .populate({
+        path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
+        populate: {
+          path: 'region',         // Level 2: Populate the region inside the reviewer
+          model: 'Region'         // Optional if you already defined 'ref' in User schema
+        }
+      });
     res.status(200).json(clients);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching clients', error: error.message });
@@ -128,13 +128,13 @@ exports.getClientById = async (req, res) => {
     }
 
     const client = await Client.findOne({ registrationId: id })
-        .populate({
-          path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
-          populate: {
-            path: 'region',         // Level 2: Populate the region inside the reviewer
-            model: 'Region'         // Optional if you already defined 'ref' in User schema
-          }
-        });
+      .populate({
+        path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
+        populate: {
+          path: 'region',         // Level 2: Populate the region inside the reviewer
+          model: 'Region'         // Optional if you already defined 'ref' in User schema
+        }
+      });
 
 
     if (!client) {
@@ -155,81 +155,186 @@ exports.clientApprovedMessage = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const client = await Client.findOne({ registrationId: id}).populate('assignedReviewer');
+    console.log(`🔍 Looking for client with registration ID: ${id}`);
+
+    const client = await Client.findOne({ registrationId: id }).populate('assignedReviewer');
+
+    if (!client) {
+      console.log(`❌ Client not found with ID: ${id}`);
+      const allClients = await Client.find({}, 'registrationId').limit(10);
+      return res.status(404).json({
+        message: 'Client not found. Please verify the registration ID exists and try again.',
+        searchedId: id,
+        availableIds: allClients.map(c => c.registrationId)
+      });
+    }
+
+    console.log(`✅ Client found: ${client.personalInfo.fullName}`);
+
+    if (client.status === 'Approved') {
+      return res.status(400).json({ message: 'Client already approved' });
+    }
+    if (client.status === 'Rejected') {
+      return res.status(400).json({ message: 'Client already rejected' });
+    }
+
+    // Check if assignedReviewer exists
+    if (!client.assignedReviewer) {
+      console.log(`❌ No assigned reviewer for client ${id}`);
+      return res.status(400).json({ message: 'No reviewer assigned to this client' });
+    }
+
     const user = await Staff.findById(client.assignedReviewer);
-    if (client.status == 'Approved') {
-      return res.status(404).json({ message: 'Client already approved' });
+    if (!user) {
+      console.log(`❌ Assigned reviewer not found: ${client.assignedReviewer}`);
+      return res.status(400).json({ message: 'Assigned reviewer not found' });
     }
-    if (client.status == 'Rejected') {
-      return res.status(404).json({ message: 'Client already rejected' });
-    }
-    
-    
 
     const clientEmail = client.personalInfo.email;
+    if (!clientEmail) {
+      return res.status(400).json({ message: 'Client email not found' });
+    }
+
     const password = generateTemporaryPassword();
 
-    const message =  `Welcome to Loan Management System
+    const message = `Welcome to Loan Management System
       Your account has been created successfully.
       Username: ${clientEmail}
       Password: ${password}
       Please log in and change your password after first login.`;
 
-    //await sendEmail(clientEmail, 'Client approved', message);
+    console.log(`📧 Sending email to: ${clientEmail}`);
+    await sendEmail(clientEmail, 'Client approved', message);
 
     client.status = 'Approved';
-    client.approvedAt = new Date(); // optional timestamp
+    client.approvedAt = new Date();
     await client.save();
 
-    const clientuser = new ClientUser({
-      clientId: client._id,
-      username: clientEmail,
-      email: clientEmail,
-      password: password, // Will be hashed automatically
-      verifiedBy: user._id,
-      role: 'client',
-      isActive: true
+    console.log(`✅ Client ${id} approved successfully`);
+
+    // Check if ClientUser already exists
+    const existingClientUser = await ClientUser.findOne({
+      $or: [
+        { username: clientEmail },
+        { email: clientEmail },
+        { clientId: client._id }
+      ]
     });
 
-    await clientuser.save();
+    if (existingClientUser) {
+      console.log(`⚠️ Client user already exists for: ${clientEmail}`);
+      // Update existing user instead of creating new one
+      existingClientUser.isActive = true;
+      existingClientUser.verifiedBy = user._id;
+      await existingClientUser.save();
+      console.log(`✅ Client user updated for: ${clientEmail}`);
+    } else {
+      // Create new ClientUser
+      const clientuser = new ClientUser({
+        clientId: client._id,
+        username: clientEmail,
+        email: clientEmail,
+        password: password,
+        verifiedBy: user._id,
+        role: 'client',
+        isActive: true
+      });
 
-    res.status(200).json({ message: 'Email sent successfully' });
+      await clientuser.save();
+      console.log(`✅ Client user created for: ${clientEmail}`);
+    }
+
+    res.status(200).json({
+      message: 'Client approved and email sent successfully',
+      client: {
+        registrationId: client.registrationId,
+        status: client.status,
+        email: clientEmail
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error sending email', error: error.message });
+    console.error('❌ Error in clientApprovedMessage:', error);
+    res.status(500).json({
+      message: 'Error processing approval',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
 function generateTemporaryPassword(length = 8) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$';
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$%';
   return Array.from({ length }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
+} '$';
+
 
 exports.clientRejectedMessage = async (req, res) => {
   try {
     const { id } = req.params;
 
+    console.log(`🔍 Looking for client to reject with registration ID: ${id}`);
+
     const client = await Client.findOne({ registrationId: id });
-    if (client.status == 'Approved') {
-      return res.status(404).json({ message: 'Client already approved' });
+
+    if (!client) {
+      console.log(`❌ Client not found with ID: ${id}`);
+      const allClients = await Client.find({}, 'registrationId').limit(10);
+      return res.status(404).json({
+        message: 'Client not found. Please verify the registration ID exists and try again.',
+        searchedId: id,
+        availableIds: allClients.map(c => c.registrationId)
+      });
     }
-    if (client.status == 'Rejected') {
-      return res.status(404).json({ message: 'Client already rejected' });
+
+    console.log(`✅ Client found: ${client.personalInfo.fullName}`);
+
+    if (client.status === 'Approved') {
+      return res.status(400).json({ message: 'Client already approved' });
+    }
+    if (client.status === 'Rejected') {
+      return res.status(400).json({ message: 'Client already rejected' });
     }
 
     const clientEmail = client.personalInfo.email;
+    if (!clientEmail) {
+      return res.status(400).json({ message: 'Client email not found' });
+    }
 
-    const message = `Welcome to Loan Management System
-      Your account has been created successfully.`;
+    const message = `Dear ${client.personalInfo.fullName},
 
-    //await sendEmail(clientEmail, 'Client rejected', message);
+Thank you for your application to our Loan Management System.
+
+After careful review, we regret to inform you that your application has been declined at this time.
+
+If you have any questions or would like to discuss this decision, please contact our support team.
+
+Best regards,
+Loan Management Team`;
+
+    console.log(`📧 Sending rejection email to: ${clientEmail}`);
+    await sendEmail(clientEmail, 'Application Status - Declined', message);
 
     client.status = 'Rejected';
-    client.rejectedAt = new Date(); // optional timestamp
+    client.rejectedAt = new Date();
     await client.save();
 
-    res.status(200).json({ message: 'Email sent successfully' });
+    console.log(`✅ Client ${id} rejected successfully`);
+
+    res.status(200).json({
+      message: 'Client rejected and email sent successfully',
+      client: {
+        registrationId: client.registrationId,
+        status: client.status,
+        email: clientEmail
+      }
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Error sending email', error: error.message });
+    console.error('❌ Error in clientRejectedMessage:', error);
+    res.status(500).json({
+      message: 'Error processing rejection',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
 
@@ -278,5 +383,277 @@ exports.updateClientStatus = async (req, res) => {
     res.status(200).json({ message: 'Client status updated', client });
   } catch (error) {
     res.status(500).json({ message: 'Error updating client', error: error.message });
+  }
+};
+// New functions to handle frontend API calls
+
+// Handle /approve endpoint with query parameter
+exports.approveClientByQuery = async (req, res) => {
+  try {
+    // Get registration ID from query parameter
+    const registrationId = req.query.id || req.body.id;
+
+    if (!registrationId) {
+      return res.status(400).json({
+        message: 'Registration ID is required as a query parameter (?id=X00000) or in request body'
+      });
+    }
+
+    console.log(`🔍 Looking for client with registration ID: ${registrationId}`);
+
+    const client = await Client.findOne({ registrationId }).populate('assignedReviewer');
+
+    if (!client) {
+      console.log(`❌ Client not found with ID: ${registrationId}`);
+      const allClients = await Client.find({}, 'registrationId').limit(10);
+      return res.status(404).json({
+        message: 'Client not found. Please verify the registration ID exists and try again.',
+        searchedId: registrationId,
+        availableIds: allClients.map(c => c.registrationId)
+      });
+    }
+
+    console.log(`✅ Client found: ${client.personalInfo.fullName}`);
+
+    if (client.status === 'Approved') {
+      return res.status(400).json({ message: 'Client already approved' });
+    }
+    if (client.status === 'Rejected') {
+      return res.status(400).json({ message: 'Client already rejected' });
+    }
+
+    // Check if assignedReviewer exists
+    if (!client.assignedReviewer) {
+      console.log(`❌ No assigned reviewer for client ${registrationId}`);
+      return res.status(400).json({ message: 'No reviewer assigned to this client' });
+    }
+
+    const user = await Staff.findById(client.assignedReviewer);
+    if (!user) {
+      console.log(`❌ Assigned reviewer not found: ${client.assignedReviewer}`);
+      return res.status(400).json({ message: 'Assigned reviewer not found' });
+    }
+
+    const clientEmail = client.personalInfo.email;
+    if (!clientEmail) {
+      return res.status(400).json({ message: 'Client email not found' });
+    }
+
+    const password = generateTemporaryPassword();
+
+    const message = `Welcome to Loan Management System
+      Your account has been created successfully.
+      Username: ${clientEmail}
+      Password: ${password}
+      Please log in and change your password after first login.`;
+
+    console.log(`📧 Sending email to: ${clientEmail}`);
+    await sendEmail(clientEmail, 'Client approved', message);
+
+    client.status = 'Approved';
+    client.approvedAt = new Date();
+    await client.save();
+
+    console.log(`✅ Client ${registrationId} approved successfully`);
+
+    // Check if ClientUser already exists
+    const existingClientUser = await ClientUser.findOne({
+      $or: [
+        { username: clientEmail },
+        { email: clientEmail },
+        { clientId: client._id }
+      ]
+    });
+
+    if (existingClientUser) {
+      console.log(`⚠️ Client user already exists for: ${clientEmail}`);
+      // Update existing user instead of creating new one
+      existingClientUser.isActive = true;
+      existingClientUser.verifiedBy = user._id;
+      await existingClientUser.save();
+      console.log(`✅ Client user updated for: ${clientEmail}`);
+    } else {
+      // Create new ClientUser
+      const clientuser = new ClientUser({
+        clientId: client._id,
+        username: clientEmail,
+        email: clientEmail,
+        password: password,
+        verifiedBy: user._id,
+        role: 'client',
+        isActive: true
+      });
+
+      await clientuser.save();
+      console.log(`✅ Client user created for: ${clientEmail}`);
+    }
+
+    res.status(200).json({
+      message: 'Client approved and email sent successfully',
+      client: {
+        registrationId: client.registrationId,
+        status: client.status,
+        email: clientEmail
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error in approveClientByQuery:', error);
+    res.status(500).json({
+      message: 'Error processing approval',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+// Handle /reject endpoint with query parameter
+exports.rejectClientByQuery = async (req, res) => {
+  try {
+    // Get registration ID from query parameter
+    const registrationId = req.query.id || req.body.id;
+
+    if (!registrationId) {
+      return res.status(400).json({
+        message: 'Registration ID is required as a query parameter (?id=X00000) or in request body'
+      });
+    }
+
+    console.log(`🔍 Looking for client to reject with registration ID: ${registrationId}`);
+
+    const client = await Client.findOne({ registrationId });
+
+    if (!client) {
+      console.log(`❌ Client not found with ID: ${registrationId}`);
+      const allClients = await Client.find({}, 'registrationId').limit(10);
+      return res.status(404).json({
+        message: 'Client not found. Please verify the registration ID exists and try again.',
+        searchedId: registrationId,
+        availableIds: allClients.map(c => c.registrationId)
+      });
+    }
+
+    console.log(`✅ Client found: ${client.personalInfo.fullName}`);
+
+    if (client.status === 'Approved') {
+      return res.status(400).json({ message: 'Client already approved' });
+    }
+    if (client.status === 'Rejected') {
+      return res.status(400).json({ message: 'Client already rejected' });
+    }
+
+    const clientEmail = client.personalInfo.email;
+    if (!clientEmail) {
+      return res.status(400).json({ message: 'Client email not found' });
+    }
+
+    const message = `Dear ${client.personalInfo.fullName},
+
+Thank you for your application to our Loan Management System.
+
+After careful review, we regret to inform you that your application has been declined at this time.
+
+If you have any questions or would like to discuss this decision, please contact our support team.
+
+Best regards,
+Loan Management Team`;
+
+    console.log(`📧 Sending rejection email to: ${clientEmail}`);
+    await sendEmail(clientEmail, 'Application Status - Declined', message);
+
+    client.status = 'Rejected';
+    client.rejectedAt = new Date();
+    await client.save();
+
+    console.log(`✅ Client ${registrationId} rejected successfully`);
+
+    res.status(200).json({
+      message: 'Client rejected and email sent successfully',
+      client: {
+        registrationId: client.registrationId,
+        status: client.status,
+        email: clientEmail
+      }
+    });
+  } catch (error) {
+    console.error('❌ Error in rejectClientByQuery:', error);
+    res.status(500).json({
+      message: 'Error processing rejection',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+};
+
+// Handle /update-status endpoint
+exports.updateClientStatusByQuery = async (req, res) => {
+  try {
+    const { id, status, agentNotes } = req.body;
+
+    if (!id) {
+      return res.status(400).json({ message: 'Client ID is required' });
+    }
+
+    if (!status || !['Approved', 'Rejected', 'Pending Review'].includes(status)) {
+      return res.status(400).json({ message: 'Valid status is required (Approved, Rejected, or Pending Review)' });
+    }
+
+    console.log(`🔍 Looking for client with registration ID: ${id} to update status to ${status}`);
+
+    const client = await Client.findOne({ registrationId: id });
+
+    if (!client) {
+      console.log(`❌ Client not found with ID: ${id}`);
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    const updateFields = {
+      status,
+      lastUpdated: new Date(),
+    };
+
+    if (agentNotes) {
+      updateFields.agentNotes = agentNotes;
+    }
+
+    if (status === 'Approved') {
+      updateFields.approvedAt = new Date();
+
+      // If approving, handle the same logic as in approve endpoint
+      if (client.status !== 'Approved') {
+        // Call the approve function to handle email and user creation
+        return exports.approveClientByQuery(req, res);
+      }
+    }
+
+    if (status === 'Rejected') {
+      updateFields.rejectedAt = new Date();
+
+      // If rejecting, handle the same logic as in reject endpoint
+      if (client.status !== 'Rejected') {
+        // Call the reject function to handle email
+        return exports.rejectClientByQuery(req, res);
+      }
+    }
+
+    // Update the client
+    const updatedClient = await Client.findOneAndUpdate(
+      { registrationId: id },
+      updateFields,
+      { new: true }
+    );
+
+    console.log(`✅ Client ${id} status updated to ${status}`);
+
+    res.status(200).json({
+      message: 'Client status updated successfully',
+      client: updatedClient
+    });
+  } catch (error) {
+    console.error('❌ Error in updateClientStatusByQuery:', error);
+    res.status(500).json({
+      message: 'Error updating client status',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 };
