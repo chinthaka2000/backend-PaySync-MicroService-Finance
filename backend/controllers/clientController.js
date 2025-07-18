@@ -1,8 +1,26 @@
+const multer = require('multer');
+const storage = require('../utils/cloudinaryStorage');
 const Client = require('../models/Client');
 const Region = require('../models/Region');
 const Staff = require('../models/Staff');
 const ClientUser = require('../models/clientUsers');
 const sendEmail = require('../utils/sendEmail');
+
+
+async function generateRegistarationId(params) {
+
+  const lastClient = await Client.findOne().sort({ createdAt: -1 });
+
+  if (!lastClient || !lastClient.registrationId) {
+    return 'L00001';
+  }
+  const lastId = lastClient.registrationId;
+  const numberPart = parseInt(lastId.slice(1)); // remove 'L' and convert to number
+  const nextNumber = numberPart + 1;
+
+  const nextId = `L${nextNumber.toString().padStart(5, '0')}`;
+  return nextId;
+}
 
 // Create a new client registration
 exports.registerClient = async (req, res) => {
@@ -33,8 +51,13 @@ exports.registerClient = async (req, res) => {
       return res.status(404).json({ message: `No agent found for region: ${region.name}` });
     }
 
+    const files = req.files;
+    const now = new Date();
+
+    const registrationId = await generateRegistarationId();
+
     const newClient = new Client({
-      registrationId: clientData.registrationId,
+      registrationId: registrationId,
       personalInfo: {
         fullName: clientData.personalInfo.fullName,
         contactNumber: clientData.personalInfo.contactNumber,
@@ -46,14 +69,14 @@ exports.registerClient = async (req, res) => {
       identityVerification: {
         idType: clientData.identityVerification.idType || 'NIC',
         idNumber: clientData.identityVerification.idNumber,
-        documentUrl: clientData.identityVerification.documentUrl
+        documentUrl: files?.idCard?.[0].path // in frontend you sholud ensure the name idcard in form-data
       },
       employmentDetails: {
         employer: clientData.employmentDetails.employer,
         jobRole: clientData.employmentDetails.jobRole,
         monthlyIncome: clientData.employmentDetails.monthlyIncome,
         employmentDuration: clientData.employmentDetails.employmentDuration,
-        employmentLetterUrl: clientData.employmentDetails.employmentLetterUrl
+        employmentLetterUrl: files?.employmentLetter?.[0].path // in frontend you should ensure the name employmentLetter in form-data
       },
       assignedReviewer: agent._id
     });
