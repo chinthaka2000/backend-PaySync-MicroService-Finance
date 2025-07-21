@@ -3,11 +3,22 @@
 const mongoose = require("mongoose");
 
 const clientSchema = new mongoose.Schema({
-  registrationId: { type: String, required: true, unique: true }, // e.g., L00001
-  submissionDate: { type: Date, default: Date.now },
+  registrationId: { 
+    type: String, 
+    required: true, 
+    unique: true 
+  }, 
+
+  submissionDate: { 
+    type: Date, 
+    default: Date.now 
+  },
   lastUpdated: Date,
 
-  assignedReviewer: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }, // agent _id
+  assignedReviewer: { 
+    type: mongoose.Schema.Types.ObjectId, 
+    ref: 'Staff' 
+  },
 
   status: {
     type: String,
