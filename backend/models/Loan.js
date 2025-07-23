@@ -1,11 +1,11 @@
 // models/Loan.js
 const mongoose = require('mongoose');
 
-const clientLoanSchema = new mongoose.Schema({
+const LoanSchema = new mongoose.Schema({
   loanApplicationId: {
     type: String,
     required: true,
-    unique: true, // e.g., LN00001
+    unique: true,
   },
 
   clientUserId: {
@@ -13,9 +13,10 @@ const clientLoanSchema = new mongoose.Schema({
     ref: 'clientUser',
     required: true,
   },
-  product:{
-    type:String,
-    required: true, // e.g., Personal Loan, Home Loan, etc.
+
+  product: {
+    type: String,
+    required: true,
   },
 
   productValue: {
@@ -25,16 +26,19 @@ const clientLoanSchema = new mongoose.Schema({
 
   loanTerm: {
     type: Number,
-    required: true, // in months (e.g., 12, 24, 36)
+    required: true,
   },
-  loanType:{
-    type:String,
-    required: true, // e.g., Secured, Unsecured
+
+  loanType: {
+    type: String,
+    required: true,
   },
 
   interestRate: {
     type: Number,
-    required: true, // e.g., 12.5 (%)
+    required: true,
+    min: 1,
+    max: 100,
   },
 
   repaymentFrequency: {
@@ -60,9 +64,7 @@ const clientLoanSchema = new mongoose.Schema({
     required: true,
   },
 
-  endDate: {
-    type: Date,
-  },
+  endDate: Date,
 
   totalPayableAmount: {
     type: Number,
@@ -76,31 +78,23 @@ const clientLoanSchema = new mongoose.Schema({
 
   monthlyInstallment: {
     type: Number,
-    required: true, // calculated based on loan amount, interest rate, and term
+    required: true,
   },
+
   monthlyInstallmentDueDate: {
     type: Date,
-    required: true, // e.g., 5th of every month
+    required: true,
   },
-  
+
   lateFee: {
-    applied: {
-      type: Boolean,
-      default: false, // true if late fee has been applied
-    },
-    amount: {
-      type: Number,
-      default: 0, // e.g., 500
-    },
-    paymentDate: {
-      type: Date,
-      default: null, // date when late fee was paid
-    },
+    applied: { type: Boolean, default: false },
+    amount: { type: Number, default: 0 },
+    paymentDate: { type: Date, default: null },
     paymentStatus: {
       type: String,
       enum: ['Pending', 'Paid'],
       default: 'Pending',
-    }
+    },
   },
 
   loanStatus: {
@@ -109,15 +103,8 @@ const clientLoanSchema = new mongoose.Schema({
     default: 'Pending',
   },
 
-  loanApprovalDate: {
-    type: Date,
-    default: null, // date when loan was approved
-  },
-
-  loanDisbursementDate: {
-    type: Date,
-    default: null, // date when loan was disbursed
-  },
+  loanApprovalDate: Date,
+  loanDisbursementDate: Date,
 
   loanClosure: {
     status: {
@@ -125,34 +112,19 @@ const clientLoanSchema = new mongoose.Schema({
       enum: ['Pending', 'Closed'],
       default: 'Pending',
     },
-    amount: {
-      type: Number,
-      default: 0, // amount paid to close the loan
-    },
-    closureDate: {
-      type: Date,
-      default: null, // date when loan was closed
-    },
-    paymentDate: {
-      type: Date,
-      default: null, // date when loan closure payment was made
-    },
+    amount: { type: Number, default: 0 },
+    closureDate: { type: Date, default: null },
+    paymentDate: { type: Date, default: null },
     paymentStatus: {
       type: String,
       enum: ['Pending', 'Paid'],
       default: 'Pending',
-    }
+    },
   },
 
-  paymentHistory: {
-    paymentDate: {
-      type: Date,
-      default: null,
-    },
-    amount: {
-      type: Number,
-      required: true,
-    },
+  paymentHistory: [{
+    paymentDate: { type: Date, default: null },
+    amount: { type: Number, required: true },
     status: {
       type: String,
       enum: ['Pending', 'Completed', 'Failed'],
@@ -163,37 +135,21 @@ const clientLoanSchema = new mongoose.Schema({
       enum: ['Bank Transfer', 'Cash', 'Cheque'],
       default: 'Bank Transfer',
     },
-  },
-  
+  }],
+
   agentNotes: String,
   agentFeedback: String,
   agentRating: {
     type: Number,
     min: 1,
     max: 5,
-    default: 3, // default rating
-  },
-
-  status: {
-    type: String,
-    enum: ['Pending', 'Approved', 'Rejected', 'Disbursed', 'Closed'],
-    default: 'Pending',
+    default: 3,
   },
 
   assignedAgent: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'staff', // staff/agent user
+    ref: 'staff',
   },
+}, { timestamps: true });
 
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-
-  updatedAt: {
-    type: Date,
-    default: Date.now,
-  },
-});
-
-module.exports = mongoose.model('ClientLoan', clientLoanSchema);
+module.exports = mongoose.model('Loan', LoanSchema);
