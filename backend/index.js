@@ -3,14 +3,17 @@ const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 
-const Staff = require("./models/Staff");
-const Region = require('./models/Region');
-const Client = require('./models/Client');
-const ClientUser = require('./models/clientUsers');
-const StaffDetails = require('./models/StaffDetails'); // make sure this line is near your other model imports
+// const Staff = require("./models/Staff");
+// const Region = require('./models/Region');
+// const Client = require('./models/Client');
+// const ClientUser = require('./models/clientUsers');
+// const StaffDetails = require('./models/StaffDetails');
+// const Grantor = require('./models/Grantor');
+// const Loan = require('./models/Loan'); // make sure this line is near your other model imports
 
-const bcrypt = require("bcrypt");
+//const bcrypt = require("bcrypt");
 const clientRoutes = require('./routes/clientRoutes');
+const staffRoutes = require('./routes/staffRoutes')
 const cors = require('cors');
 
 
@@ -28,6 +31,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/clientsAPI', clientRoutes);
+app.use('/staffAPI', staffRoutes);
 
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);

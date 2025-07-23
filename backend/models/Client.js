@@ -79,7 +79,8 @@ const clientSchema = new mongoose.Schema({
 
   approvedAt: Date,
   rejectedAt: Date
-}, {
+},
+{
   timestamps: true
 });
 
