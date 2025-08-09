@@ -1,155 +1,206 @@
-// models/Loan.js
+
 const mongoose = require('mongoose');
 
-const LoanSchema = new mongoose.Schema({
+const guarantorSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  idNumber: {
+    type: String,
+    required: true
+  },
+  contactNumber: {
+    type: String,
+    required: true
+  },
+  address: {
+    type: String,
+    required: true
+  },
+  relationship: {
+    type: String,
+    required: true
+  },
+  idDocumentUrl: String,
+  paysheetUrl: String
+});
+
+const paymentSchema = new mongoose.Schema({
+  paymentId: {
+    type: String,
+    unique: true
+  },
+  amount: {
+    type: Number,
+    required: true
+  },
+  paymentDate: {
+    type: Date,
+    required: true
+  },
+  paymentMethod: {
+    type: String,
+    enum: ['bank_transfer', 'online', 'cash', 'cheque'],
+    default: 'bank_transfer'
+  },
+  paymentSlipUrl: String,
+  status: {
+    type: String,
+    enum: ['Pending', 'Approved', 'Rejected'],
+    default: 'Pending'
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Staff'
+  },
+  approvedAt: Date,
+  rejectedReason: String
+});
+
+const loanSchema = new mongoose.Schema({
   loanApplicationId: {
     type: String,
     required: true,
-    unique: true,
+    unique: true
   },
-
   clientUserId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'clientUser',
-    required: true,
+    ref: 'Client',
+    required: true
   },
-
   product: {
     type: String,
     required: true,
+    enum: ['Personal Loan', 'Business Loan', 'Vehicle Loan', 'Home Loan', 'Education Loan']
   },
-
-  productValue: {
+  loanAmount: {
     type: Number,
-    required: true,
+    required: true
   },
-
   loanTerm: {
     type: Number,
-    required: true,
+    required: true // in months
   },
-
   loanType: {
     type: String,
-    required: true,
+    enum: ['Secured', 'Unsecured'],
+    default: 'Unsecured'
   },
-
   interestRate: {
     type: Number,
-    required: true,
-    min: 1,
-    max: 100,
+    required: true
   },
-
   repaymentFrequency: {
     type: String,
-    enum: ['Monthly', 'Weekly', 'Bi-weekly'],
-    default: 'Monthly',
+    enum: ['Monthly', 'Quarterly', 'Semi-annually', 'Annually'],
+    default: 'Monthly'
   },
-
-  primaryGrantor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Grantor',
-    required: true,
+  purpose: {
+    type: String,
+    required: true
   },
-
-  secondaryGrantor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Grantor',
-    required: true,
-  },
-
-  startDate: {
-    type: Date,
-    required: true,
-  },
-
-  endDate: Date,
-
-  totalPayableAmount: {
-    type: Number,
-    required: true,
-  },
-
-  remainingAmount: {
-    type: Number,
-    required: true,
-  },
-
-  monthlyInstallment: {
-    type: Number,
-    required: true,
-  },
-
-  monthlyInstallmentDueDate: {
-    type: Date,
-    required: true,
-  },
-
-  lateFee: {
-    applied: { type: Boolean, default: false },
-    amount: { type: Number, default: 0 },
-    paymentDate: { type: Date, default: null },
-    paymentStatus: {
-      type: String,
-      enum: ['Pending', 'Paid'],
-      default: 'Pending',
+  primaryGuarantor: guarantorSchema,
+  secondaryGuarantor: guarantorSchema,
+  borrowerPaysheetUrl: String,
+  downPayment: {
+    amount: {
+      type: Number,
+      required: true
     },
+    paymentSlipUrl: String,
+    status: {
+      type: String,
+      enum: ['Pending', 'Verified'],
+      default: 'Pending'
+    }
   },
-
+  totalPayableAmount: Number,
+  monthlyInstallment: Number,
+  monthlyInstallmentDueDate: Number, // day of month (1-31)
   loanStatus: {
     type: String,
-    enum: ['Pending', 'Approved', 'Rejected', 'Disbursed', 'Closed'],
-    default: 'Pending',
+    enum: ['Pending', 'Under Review', 'Approved', 'Rejected', 'Active', 'Completed', 'Defaulted'],
+    default: 'Pending'
   },
-
-  loanApprovalDate: Date,
-  loanDisbursementDate: Date,
-
+  agentReview: {
+    reviewedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Staff'
+    },
+    reviewDate: Date,
+    status: {
+      type: String,
+      enum: ['Pending', 'Approved', 'Rejected']
+    },
+    comments: String,
+    rating: {
+      type: Number,
+      min: 1,
+      max: 5
+    }
+  },
+  regionalAdminApproval: {
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Staff'
+    },
+    approvalDate: Date,
+    status: {
+      type: String,
+      enum: ['Pending', 'Approved', 'Rejected']
+    },
+    comments: String
+  },
+  agreementGenerated: {
+    type: Boolean,
+    default: false
+  },
+  agreementUrl: String,
+  agreementGeneratedDate: Date,
   loanClosure: {
-    status: {
-      type: String,
-      enum: ['Pending', 'Closed'],
-      default: 'Pending',
-    },
-    amount: { type: Number, default: 0 },
-    closureDate: { type: Date, default: null },
-    paymentDate: { type: Date, default: null },
-    paymentStatus: {
-      type: String,
-      enum: ['Pending', 'Paid'],
-      default: 'Pending',
-    },
+    closureDate: Date,
+    closureReason: String,
+    finalAmount: Number
   },
-
-  paymentHistory: [{
-    paymentDate: { type: Date, default: null },
-    amount: { type: Number, required: true },
-    status: {
-      type: String,
-      enum: ['Pending', 'Completed', 'Failed'],
-      default: 'Pending',
-    },
-    paymentMethod: {
-      type: String,
-      enum: ['Bank Transfer', 'Cash', 'Cheque'],
-      default: 'Bank Transfer',
-    },
-  }],
-
-  agentNotes: String,
-  agentFeedback: String,
-  agentRating: {
-    type: Number,
-    min: 1,
-    max: 5,
-    default: 3,
+  paymentHistory: [paymentSchema],
+  agentRating: Number,
+  createdAt: {
+    type: Date,
+    default: Date.now
   },
+  updatedAt: {
+    type: Date,
+    default: Date.now
+  }
+}, {
+  timestamps: true
+});
 
-  assignedAgent: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'staff',
-  },
-}, { timestamps: true });
+// Calculate total payable amount and monthly installment before saving
+loanSchema.pre('save', function (next) {
+  if (this.loanAmount && this.interestRate && this.loanTerm) {
+    // Simple interest calculation for now
+    const principal = this.loanAmount;
+    const rate = this.interestRate / 100;
+    const time = this.loanTerm / 12; // convert months to years
 
-module.exports = mongoose.model('Loan', LoanSchema);
+    const interest = principal * rate * time;
+    this.totalPayableAmount = principal + interest;
+    this.monthlyInstallment = this.totalPayableAmount / this.loanTerm;
+  }
+
+  this.updatedAt = Date.now();
+  next();
+});
+
+// Generate unique loan application ID
+loanSchema.pre('save', async function (next) {
+  if (!this.loanApplicationId) {
+    const count = await mongoose.model('Loan').countDocuments();
+    this.loanApplicationId = `L${String(count + 1).padStart(6, '0')}`;
+  }
+  next();
+});
+
+module.exports = mongoose.model('Loan', loanSchema);
