@@ -4,6 +4,7 @@ const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 
+
 const Staff = require("./models/Staff");
 const Region = require('./models/Region');
 const Client = require('./models/Client');
@@ -15,6 +16,7 @@ const bcrypt = require("bcrypt");
 const clientRoutes = require('./routes/clientRoutes');
 const loanRoutes = require('./routes/loanRoutes');
 const agentRoutes = require('./routes/agentRoutes');
+
 const cors = require('cors');
 
 
@@ -59,8 +61,10 @@ app.get('/health', async (req, res) => {
 });
 
 app.use('/clientsAPI', clientRoutes);
+
 app.use('/api/loans', loanRoutes);
 app.use('/api/agents', agentRoutes);
+
 
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
