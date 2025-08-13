@@ -178,11 +178,44 @@ exports.getClientById = async (req, res) => {
   }
 };
 
-exports.clientApprovedMessage = async (req, res) => {
+exports.getClientByAssignerId = async (req, res) => {
   try {
     const { id } = req.params;
 
-    console.log(`🔍 Looking for client with registration ID: ${id}`);
+    if (!id) {
+      return res.status(400).json({ message: 'Registration ID is required' });
+    }
+
+    const client = await Client.find({ assignedReviewer: id })
+      .populate({
+        path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
+        populate: {
+          path: 'region',         // Level 2: Populate the region inside the reviewer
+          model: 'Region'         // Optional if you already defined 'ref' in User schema
+        }
+      });
+
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    // res.status(200).json({
+    //   message: 'Client details fetched successfully',
+    //   data: client
+    // });
+     res.status(200).json(client);
+  } catch (error) {
+    console.error('Error getting client by ID:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.clientApprovedMessage = async (req, res) => {
+  try {
+    const { id,notes } = req.body;
+
+    console.log(`🔍hello Looking for client with registration ID: ${id}`);
 
     const client = await Client.findOne({ registrationId: id }).populate('assignedReviewer');
 
@@ -235,8 +268,10 @@ exports.clientApprovedMessage = async (req, res) => {
 
     client.status = 'Approved';
     client.approvedAt = new Date();
+    client.agentNotes = notes;
     await client.save();
 
+    console.log(`${agentNotes ? `📝 Notes added: ${notes}` : 'no notes available'}`);
     console.log(`✅ Client ${id} approved successfully`);
 
     // Check if ClientUser already exists
@@ -419,6 +454,7 @@ exports.approveClientByQuery = async (req, res) => {
   try {
     // Get registration ID from query parameter
     const registrationId = req.query.id || req.body.id;
+    const notes = req.body.agentNotes || '';
 
     if (!registrationId) {
       return res.status(400).json({
@@ -479,6 +515,7 @@ exports.approveClientByQuery = async (req, res) => {
 
     client.status = 'Approved';
     client.approvedAt = new Date();
+    client.agentNotes = notes;
     await client.save();
 
     console.log(`✅ Client ${registrationId} approved successfully`);
@@ -538,6 +575,7 @@ exports.rejectClientByQuery = async (req, res) => {
   try {
     // Get registration ID from query parameter
     const registrationId = req.query.id || req.body.id;
+    const notes = req.body.agentNotes || '';
 
     if (!registrationId) {
       return res.status(400).json({
@@ -589,6 +627,7 @@ Loan Management Team`;
 
     client.status = 'Rejected';
     client.rejectedAt = new Date();
+    client.agentNotes = notes;
     await client.save();
 
     console.log(`✅ Client ${registrationId} rejected successfully`);
