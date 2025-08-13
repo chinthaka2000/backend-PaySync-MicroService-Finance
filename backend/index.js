@@ -1,35 +1,26 @@
-// index.js
 const express = require("express");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
-
-// const Staff = require("./models/Staff");
-// const Region = require('./models/Region');
-// const Client = require('./models/Client');
-// const ClientUser = require('./models/clientUsers');
-// const StaffDetails = require('./models/StaffDetails');
-// const Grantor = require('./models/Grantor');
-// const Loan = require('./models/Loan'); // make sure this line is near your other model imports
-
-//const bcrypt = require("bcrypt");
-const clientRoutes = require('./routes/clientRoutes');
-const staffRoutes = require('./routes/staffRoutes')
-const cors = require('cors');
-
-
+const cors = require("cors");
 
 dotenv.config();
 const PORT = process.env.PORT || 5000;
 connectDB();
 
 const app = express();
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
 app.get('/', (req, res) => {
   res.send('Welcome to the Loan Management System API');
 });
 
+const clientRoutes = require('./routes/clientRoutes');
+const staffRoutes = require('./routes/staffRoutes');
 app.use('/clientsAPI', clientRoutes);
 app.use('/staffAPI', staffRoutes);
 
