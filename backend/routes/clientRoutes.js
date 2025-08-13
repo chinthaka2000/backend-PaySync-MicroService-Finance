@@ -19,6 +19,9 @@ router.get('/all', clientController.getAllClients);
 router.get('/:id', clientController.getClientById);
 router.get('/assigner/:id', clientController.getClientByAssignerId);
 
+//verified clients by clientUser model
+router.get('/verified/:id', clientController.getClientUserByVerifierId);
+
 // Original routes - these are the ones used by the frontend
 //router.get('/:id/approve', clientController.clientApprovedMessage);
 router.post('/:id/approve', clientController.clientApprovedMessage);
@@ -31,6 +34,10 @@ router.post('/approve', clientController.approveClientByQuery);
 router.get('/reject', clientController.rejectClientByQuery);
 router.post('/reject', clientController.rejectClientByQuery);
 router.post('/update-status', clientController.updateClientStatusByQuery);
+
+//approved clients by clientUser model
+router.patch('/suspend/:id', clientController.suspendClientById);
+    
 
 
 router.post('/login', authClientController.clientLogin);
