@@ -723,3 +723,55 @@ exports.updateClientStatusByQuery = async (req, res) => {
     });
   }
 };
+
+exports.getClientUserByVerifierId = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!id) {
+      return res.status(400).json({ message: 'Verifier ID is required' });
+    }
+
+    const clients = await ClientUser.find({ verifiedBy: id })
+      .select('-password')
+      .populate({
+        path: 'clientId', // populate Client
+        populate: {
+          path: 'assignedReviewer', // populate Staff assignedReviewer inside Client
+          populate: {
+            path: 'region' // populate Region inside Staff
+          }
+        }
+      });
+
+    if (!clients || clients.length === 0) {
+      return res.status(404).json({ message: 'No verified clients found for this verifier' });
+    }
+
+    res.status(200).json(clients);
+  } catch (error) {
+    console.error('Error fetching verified clients:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+exports.suspendClientById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const client = await ClientUser.findByIdAndUpdate(
+      id,
+      { status: 'Suspended' },
+      { new: true }
+    );
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    res.json({ message: 'Client suspended successfully', client });
+  } catch (error) {
+    console.error('Error suspending client:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

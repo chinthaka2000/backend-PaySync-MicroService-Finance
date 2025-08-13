@@ -27,9 +27,10 @@ const clientUserSchema = new mongoose.Schema({
     type: String,
     default: 'client'
   },
-  isActive: {
-    type: Boolean,
-    default: true
+  status: {
+    type: String,
+    enum: ['Active', 'Suspended', 'Inactive'],
+    default: 'Active',
   },
   verifiedBy: {
     type: mongoose.Schema.Types.ObjectId,

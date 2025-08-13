@@ -53,7 +53,7 @@ const clientSchema = new mongoose.Schema({
   identityVerification: {
     idType: { type: String, default: 'NIC' },
     idNumber: String,
-    documentUrl: String,
+    idCardUrl: String,
     verified: { type: Boolean, default: false }
   },
 
