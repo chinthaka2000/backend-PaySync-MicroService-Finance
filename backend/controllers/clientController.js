@@ -1,4 +1,5 @@
 const multer = require('multer');
+const mongoose = require('mongoose');
 const storage = require('../utils/cloudinaryStorage');
 const Client = require('../models/Client');
 const Region = require('../models/Region');
@@ -183,7 +184,12 @@ exports.getClientByAssignerId = async (req, res) => {
     const { id } = req.params;
 
     if (!id) {
-      return res.status(400).json({ message: 'Registration ID is required' });
+      return res.status(400).json({ message: 'Assigner ID is required' });
+    }
+
+    // Validate if the ID is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: 'Invalid assigner ID format' });
     }
 
     const client = await Client.find({ assignedReviewer: id })
@@ -204,7 +210,7 @@ exports.getClientByAssignerId = async (req, res) => {
     //   message: 'Client details fetched successfully',
     //   data: client
     // });
-     res.status(200).json(client);
+    res.status(200).json(client);
   } catch (error) {
     console.error('Error getting client by ID:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
@@ -213,7 +219,7 @@ exports.getClientByAssignerId = async (req, res) => {
 
 exports.clientApprovedMessage = async (req, res) => {
   try {
-    const { id,notes } = req.body;
+    const { id, notes } = req.body;
 
     console.log(`🔍hello Looking for client with registration ID: ${id}`);
 

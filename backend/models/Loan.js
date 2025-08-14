@@ -28,8 +28,7 @@ const guarantorSchema = new mongoose.Schema({
 
 const paymentSchema = new mongoose.Schema({
   paymentId: {
-    type: String,
-    unique: true
+    type: String
   },
   amount: {
     type: Number,
@@ -61,7 +60,6 @@ const paymentSchema = new mongoose.Schema({
 const loanSchema = new mongoose.Schema({
   loanApplicationId: {
     type: String,
-    required: true,
     unique: true
   },
   clientUserId: {
@@ -197,8 +195,12 @@ loanSchema.pre('save', function (next) {
 // Generate unique loan application ID
 loanSchema.pre('save', async function (next) {
   if (!this.loanApplicationId) {
-    const count = await mongoose.model('Loan').countDocuments();
-    this.loanApplicationId = `L${String(count + 1).padStart(6, '0')}`;
+    try {
+      const count = await this.constructor.countDocuments();
+      this.loanApplicationId = `L${String(count + 1).padStart(6, '0')}`;
+    } catch (error) {
+      return next(error);
+    }
   }
   next();
 });

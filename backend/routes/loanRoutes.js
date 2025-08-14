@@ -4,6 +4,9 @@ const loanController = require('../controllers/loanController');
 
 // Loan application routes
 router.post('/create', loanController.createLoanApplication);
+router.get('/', loanController.getAllLoans); // For useLoanData hook
+router.get('/stats', loanController.getLoanStats); // For useLoanData hook
+router.get('/agreements', loanController.getLoanAgreements); // For useLoanData hook
 router.get('/agent/:agentId', loanController.getAgentLoans);
 router.get('/agent/:agentId/stats', loanController.getAgentLoanStats);
 router.get('/agent/:agentId/pending', loanController.getPendingLoansForAgent);

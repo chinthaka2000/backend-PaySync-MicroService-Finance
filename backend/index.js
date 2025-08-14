@@ -1,8 +1,13 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
-const connectDB = require("./config/db");
 const cors = require("cors");
+
+// Load environment variables FIRST with explicit path
+dotenv.config({ path: './.env' });
+
+// Now import and call connectDB after env vars are loaded
+const connectDB = require("./config/db");
 
 // Models from main branch
 const Staff = require("./models/Staff");
@@ -20,7 +25,6 @@ const staffRoutes = require('./routes/staffRoutes'); // from client branch
 
 const bcrypt = require("bcrypt");
 
-dotenv.config();
 const PORT = process.env.PORT || 5000;
 connectDB();
 

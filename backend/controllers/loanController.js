@@ -97,8 +97,32 @@ exports.getAgentLoans = async (req, res) => {
 
     const total = await Loan.countDocuments(query);
 
+    // Transform to match frontend interface
+    const transformedLoans = loans.map(loan => ({
+      id: loan._id.toString(),
+      borrowerName: loan.clientUserId?.personalInfo?.fullName || 'Unknown',
+      amount: loan.loanAmount,
+      status: loan.loanStatus.toLowerCase().replace(/\s+/g, '_'),
+      assignedAgentId: loan.agentReview?.reviewedBy?._id?.toString() || agentId,
+      createdAt: loan.createdAt,
+      updatedAt: loan.updatedAt,
+      interestRate: loan.interestRate,
+      totalPaid: loan.paymentHistory?.reduce((sum, payment) =>
+        payment.status === 'Approved' ? sum + payment.amount : sum, 0) || 0,
+      termMonths: loan.loanTerm,
+      monthlyPayment: loan.monthlyInstallment,
+      disbursedDate: loan.loanStatus === 'Active' ? loan.updatedAt : null,
+      completedDate: loan.loanStatus === 'Completed' ? loan.updatedAt : null,
+      // Additional fields that might be useful
+      loanApplicationId: loan.loanApplicationId,
+      product: loan.product,
+      purpose: loan.purpose,
+      clientId: loan.clientUserId?._id?.toString(),
+      registrationId: loan.clientUserId?.registrationId
+    }));
+
     res.json({
-      loans,
+      loans: transformedLoans,
       total,
       page: parseInt(page),
       pages: Math.ceil(total / limit)
@@ -410,6 +434,159 @@ exports.searchLoans = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       message: 'Error searching loans',
+      error: error.message
+    });
+  }
+};
+
+// Get all loans (for useLoanData hook)
+exports.getAllLoans = async (req, res) => {
+  try {
+    const { status, page = 1, limit = 50 } = req.query;
+
+    let query = {};
+    if (status) {
+      query.loanStatus = status;
+    }
+
+    const loans = await Loan.find(query)
+      .populate('clientUserId', 'personalInfo registrationId')
+      .populate('agentReview.reviewedBy', 'name email')
+      .populate('regionalAdminApproval.approvedBy', 'name email')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    // Transform to match frontend interface
+    const transformedLoans = loans.map(loan => ({
+      id: loan._id.toString(),
+      borrowerName: loan.clientUserId?.personalInfo?.fullName || 'Unknown',
+      amount: loan.loanAmount,
+      status: loan.loanStatus.toLowerCase().replace(' ', '_'),
+      assignedAgentId: loan.agentReview?.reviewedBy?.toString() || '',
+      createdAt: loan.createdAt,
+      updatedAt: loan.updatedAt,
+      interestRate: loan.interestRate,
+      totalPaid: loan.paymentHistory?.reduce((sum, payment) =>
+        payment.status === 'Approved' ? sum + payment.amount : sum, 0) || 0,
+      termMonths: loan.loanTerm,
+      monthlyPayment: loan.monthlyInstallment,
+      disbursedDate: loan.loanStatus === 'Active' ? loan.updatedAt : null,
+      completedDate: loan.loanStatus === 'Completed' ? loan.updatedAt : null
+    }));
+
+    res.json(transformedLoans);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching all loans',
+      error: error.message
+    });
+  }
+};
+
+// Get loan statistics (for useLoanData hook)
+exports.getLoanStats = async (req, res) => {
+  try {
+    const totalLoans = await Loan.countDocuments();
+    const completeLoans = await Loan.countDocuments({ loanStatus: 'Completed' });
+    const pendingLoans = await Loan.countDocuments({ loanStatus: { $in: ['Pending', 'Under Review'] } });
+    const overdueLoans = await Loan.countDocuments({ loanStatus: 'Defaulted' });
+    const pendingApplications = await Loan.countDocuments({ loanStatus: 'Pending' });
+
+    // Calculate financial stats
+    const financialStats = await Loan.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$loanAmount' },
+          totalDisbursed: {
+            $sum: {
+              $cond: [
+                { $in: ['$loanStatus', ['Active', 'Completed', 'Defaulted']] },
+                '$loanAmount',
+                0
+              ]
+            }
+          },
+          averageInterestRate: { $avg: '$interestRate' }
+        }
+      }
+    ]);
+
+    // Calculate total collected from payments
+    const paymentStats = await Loan.aggregate([
+      { $unwind: { path: '$paymentHistory', preserveNullAndEmptyArrays: true } },
+      {
+        $match: {
+          'paymentHistory.status': 'Approved'
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalCollected: { $sum: '$paymentHistory.amount' }
+        }
+      }
+    ]);
+
+    const stats = financialStats[0] || {};
+    const totalCollected = paymentStats[0]?.totalCollected || 0;
+    const defaultRate = totalLoans > 0 ? (overdueLoans / totalLoans) * 100 : 0;
+
+    res.json({
+      totalLoans,
+      completeLoans,
+      pendingLoans,
+      overdueLoans,
+      pendingApplications,
+      totalAmount: stats.totalAmount || 0,
+      totalDisbursed: stats.totalDisbursed || 0,
+      totalCollected,
+      averageInterestRate: stats.averageInterestRate || 0,
+      defaultRate
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching loan statistics',
+      error: error.message
+    });
+  }
+};
+
+// Get loan agreements (for useLoanData hook)
+exports.getLoanAgreements = async (req, res) => {
+  try {
+    const loans = await Loan.find({
+      loanStatus: { $in: ['Active', 'Completed'] },
+      agreementGenerated: true
+    })
+      .populate('clientUserId', 'personalInfo registrationId')
+      .sort({ createdAt: -1 });
+
+    const agreements = loans.map(loan => ({
+      id: loan._id.toString(),
+      loanId: loan.loanApplicationId,
+      borrowerId: loan.clientUserId._id.toString(),
+      borrowerName: loan.clientUserId.personalInfo.fullName,
+      amount: loan.loanAmount,
+      interestRate: loan.interestRate,
+      termMonths: loan.loanTerm,
+      monthlyPayment: loan.monthlyInstallment,
+      startDate: loan.createdAt,
+      endDate: new Date(new Date(loan.createdAt).setMonth(
+        new Date(loan.createdAt).getMonth() + loan.loanTerm
+      )).toISOString(),
+      status: loan.loanStatus === 'Completed' ? 'completed' : 'active',
+      signedDate: loan.agreementGeneratedDate,
+      documentUrl: loan.agreementUrl,
+      createdAt: loan.createdAt,
+      updatedAt: loan.updatedAt
+    }));
+
+    res.json(agreements);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching loan agreements',
       error: error.message
     });
   }

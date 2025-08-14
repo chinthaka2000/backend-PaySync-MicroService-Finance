@@ -124,6 +124,25 @@ build/Release
 # Kiro IDE files
 .kiro/
 
+# Additional common files
+*.zip
+*.tar.gz
+*.rar
+
+# Test files
+test-results/
+coverage-reports/
+
+# Monitoring and profiling
+newrelic_agent.log
+*.heapsnapshot
+
+# Package manager lock files (keep only one)
+# Uncomment the one you're NOT using:
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
 # OS generated files
 .DS_Store
 .DS_Store?
