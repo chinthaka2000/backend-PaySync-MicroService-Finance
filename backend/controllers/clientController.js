@@ -775,3 +775,47 @@ exports.suspendClientById = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+exports.activateClientById = async (req, res) => {
+  try {
+    const { id ,status} = req.params;
+    // console.log(`Activating status ${status}`);
+
+    const client = await ClientUser.findByIdAndUpdate(
+      id,
+      { status: 'Active' },
+      { new: true }
+    );
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    res.json({ message: 'Client Activated successfully', client });
+  } catch (error) {
+    console.error('Error Activating client:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};  
+
+exports.deactivateClientById = async (req, res) => {
+    try {
+    const { id ,status} = req.params;
+    // console.log(`Activating status ${status}`);
+
+    const client = await ClientUser.findByIdAndUpdate(
+      id,
+      { status: 'Inactive' },
+      { new: true }
+    );
+
+    if (!client) {
+      return res.status(404).json({ message: 'Client not found' });
+    }
+
+    res.json({ message: 'Client Deactivated successfully', client });
+  } catch (error) {
+    console.error('Error Deactivating client:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

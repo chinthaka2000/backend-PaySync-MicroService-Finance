@@ -37,8 +37,8 @@ router.post('/update-status', clientController.updateClientStatusByQuery);
 
 //approved clients by clientUser model
 router.patch('/suspend/:id', clientController.suspendClientById);
-    
-
+router.patch('/activate/:id', clientController.activateClientById);
+router.patch('/deactivate/:id', clientController.deactivateClientById);
 
 router.post('/login', authClientController.clientLogin);
 
