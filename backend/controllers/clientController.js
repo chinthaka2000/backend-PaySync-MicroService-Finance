@@ -55,8 +55,12 @@ exports.registerClient = async (req, res) => {
     const files = req.files;
     const now = new Date();
 
-    const idCardUpload = await cloudinary.uploader.upload(files?.idCard?.[0].path);
-    const employmentLetterUpload = await cloudinary.uploader.upload(files?.employmentLetter?.[0].path);
+    // const idCardUpload = await cloudinary.uploader.upload(files?.idCard?.[0].path);
+    // const employmentLetterUpload = await cloudinary.uploader.upload(files?.employmentLetter?.[0].path);
+
+    const idCardUrl = files?.idCard ? files.idCard[0].path : null;
+    const employmentLetterUrl = files?.employmentLetter ? files.employmentLetter[0].path : null;
+
 
 
     const registrationId = await generateRegistarationId();
@@ -74,14 +78,14 @@ exports.registerClient = async (req, res) => {
       identityVerification: {
         idType: clientData.identityVerification.idType || 'NIC',
         idNumber: clientData.identityVerification.idNumber,
-        documentUrl: idCardUpload.secure_url // in frontend you sholud ensure the name idcard in form-data
+        documentUrl: idCardUrl // in frontend you sholud ensure the name idcard in form-data
       },
       employmentDetails: {
         employer: clientData.employmentDetails.employer,
         jobRole: clientData.employmentDetails.jobRole,
         monthlyIncome: clientData.employmentDetails.monthlyIncome,
         employmentDuration: clientData.employmentDetails.employmentDuration,
-        employmentLetterUrl: employmentLetterUpload.secure_url // in frontend you should ensure the name employmentLetter in form-data
+        employmentLetterUrl: employmentLetterUrl // in frontend you should ensure the name employmentLetter in form-data
       },
       assignedReviewer: agent._id
     });

@@ -1,11 +1,10 @@
 const express = require('express');
 const multer = require('multer');
-const storage = require('../utils/cloudinaryStorage');
 const router = express.Router();
 const clientController = require('../controllers/clientController');
 const authClientController = require('../controllers/authClientController');
 
-const upload = multer({ storage });
+const upload = require("../middlewares/multer");
 
 router.post('/register', upload.fields([
   { name: 'idCard', maxCount: 1 },
