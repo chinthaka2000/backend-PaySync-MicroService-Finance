@@ -26,7 +26,7 @@ async function generateRegistarationId(params) {
 // Create a new client registration
 exports.registerClient = async (req, res) => {
   try {
-    const clientData = req.body;
+    const clientData = JSON.parse(req.body.data);
 
     const existingClient = await Client.findOne({ registrationId: clientData.registrationId });
     if (existingClient) {
@@ -61,6 +61,7 @@ exports.registerClient = async (req, res) => {
     const idCardUrl = files?.idCard ? files.idCard[0].path : null;
     const employmentLetterUrl = files?.employmentLetter ? files.employmentLetter[0].path : null;
 
+    
 
 
     const registrationId = await generateRegistarationId();
@@ -78,7 +79,7 @@ exports.registerClient = async (req, res) => {
       identityVerification: {
         idType: clientData.identityVerification.idType || 'NIC',
         idNumber: clientData.identityVerification.idNumber,
-        documentUrl: idCardUrl // in frontend you sholud ensure the name idcard in form-data
+        idCardUrl: idCardUrl // in frontend you sholud ensure the name idcard in form-data
       },
       employmentDetails: {
         employer: clientData.employmentDetails.employer,
