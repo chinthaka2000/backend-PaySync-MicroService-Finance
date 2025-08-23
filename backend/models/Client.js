@@ -3,30 +3,25 @@
 const mongoose = require("mongoose");
 
 const clientSchema = new mongoose.Schema({
+  // Registration Overview
   registrationId: { 
-    type: String, 
-    required: true, 
-    unique: true 
-  }, 
-
+      type: String, 
+      required: true, 
+      unique: true 
+    }, 
   submissionDate: { 
     type: Date, 
     default: Date.now 
   },
   lastUpdated: Date,
-
   assignedReviewer: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Staff' 
   },
+  verifiedOverview: { type: Boolean, default: false },
 
-  status: {
-    type: String,
-    enum: ['Pending', 'Approved', 'Rejected'],
-    default: 'Pending',
-  },
-
-  personalInfo: {
+  // Personal Information
+   personalInfo: {
     fullName: String,
     contactNumber: String,
     email: String,
@@ -48,8 +43,10 @@ const clientSchema = new mongoose.Schema({
       ],
       required: true
     },
+    verified: { type: Boolean, default: false },
   },
 
+  // Identity Verification
   identityVerification: {
     idType: { type: String, default: 'NIC' },
     idNumber: String,
@@ -57,7 +54,8 @@ const clientSchema = new mongoose.Schema({
     verified: { type: Boolean, default: false }
   },
 
-  employmentDetails: {
+  // Employment Details
+   employmentDetails: {
     employer: String,
     jobRole: String,
     monthlyIncome: Number,
@@ -66,7 +64,8 @@ const clientSchema = new mongoose.Schema({
     verified: { type: Boolean, default: false }
   },
 
-  documents: {
+  // Document Overview
+   documents: {
     idCardUrl: String,
     employmentLetterUrl: String,
     photoUrl: String,
@@ -75,8 +74,18 @@ const clientSchema = new mongoose.Schema({
     verified: { type: Boolean, default: false }
   },
 
+  // Application Details
   agentNotes: String,
+  verifiedNote : { type: Boolean, default: false },
 
+  
+
+  status: {
+    type: String,
+    enum: ['Pending', 'Approved', 'Rejected'],
+    default: 'Pending',
+  },
+  
   approvedAt: Date,
   rejectedAt: Date
 },
