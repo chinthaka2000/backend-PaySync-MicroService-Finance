@@ -58,4 +58,4 @@ clientUserSchema.pre('save', async function (next) {
   }
 });
 
-module.exports = mongoose.model('ClientUser', clientUserSchema);
+module.exports = mongoose.model('ClientUsers', clientUserSchema);

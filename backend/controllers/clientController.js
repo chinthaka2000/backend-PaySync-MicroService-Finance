@@ -159,15 +159,23 @@ exports.getClientById = async (req, res) => {
     if (!id) {
       return res.status(400).json({ message: 'Registration ID is required' });
     }
+    console.log("Fetching client with ID:", id);
+    // const client = await ClientUser.findOne({ _id: id })
+    //   .populate({
+    //     path: "clientId",          // First populate clientId
+    //     populate: {
+    //       path: "assignedReviewer" // Then populate assignedReviewer inside client
+    //     }
+    //   });
+    const clientUser = await ClientUser.findOne({ _id: id }).select("clientId");
 
-    const client = await Client.findOne({ registrationId: id })
-      .populate({
-        path: 'assignedReviewer', // Level 1: Populate the assigned reviewer
-        populate: {
-          path: 'region',         // Level 2: Populate the region inside the reviewer
-          model: 'Region'         // Optional if you already defined 'ref' in User schema
-        }
-      });
+    if (!clientUser) {
+      return res.status(404).json({ message: "ClientUser not found" });
+    }
+
+    // Step 2: Use clientId to fetch full client data
+    const client = await Client.findOne({ _id: clientUser.clientId })
+      .populate("assignedReviewer");
 
 
     if (!client) {

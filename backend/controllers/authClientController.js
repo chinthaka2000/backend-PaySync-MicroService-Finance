@@ -7,7 +7,11 @@ const sendEmail = require('../utils/sendEmail');
 // LOGIN
 exports.clientLogin = async (req, res) => {
   const { email, password } = req.body;
-  const user = await ClientUser.findOne({ email, isActive: true });
+  console.log("Login attempt for email:", email);
+  console.log("Login attempt for email:", password);
+
+
+  const user = await ClientUser.findOne({ email, status: 'Active' });
   if (!user) return res.status(401).json({ message: 'User not found or inactive' });
 
   const isMatch = await bcrypt.compare(password, user.password);
