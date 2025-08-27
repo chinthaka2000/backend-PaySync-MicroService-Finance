@@ -217,12 +217,16 @@ exports.agentReviewLoan = async (req, res) => {
 exports.getAgentLoanStats = async (req, res) => {
   try {
     const { agentId } = req.params;
-
     // Find clients assigned to this agent
     const agentClients = await Client.find({ assignedReviewer: agentId });
     const clientIds = agentClients.map(client => client._id);
 
+    console.log(`Found ${clientIds} clients for agent ${agentId}`);
+
     const totalLoans = await Loan.countDocuments({ clientUserId: { $in: clientIds } });
+
+    console.log(`Total loans for agent ${agentId}: ${totalLoans}`);
+
     const activeLoans = await Loan.countDocuments({
       clientUserId: { $in: clientIds },
       loanStatus: 'Active'
