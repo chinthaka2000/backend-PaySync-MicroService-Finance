@@ -33,7 +33,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: ["http://localhost:5173","http://localhost:8081"],
+    origin: ["http://localhost:5173", "http://localhost:8081"],
     credentials: true,
   })
 );
@@ -77,6 +77,7 @@ app.use("/api/staff", staffRoutes);
 app.use("/api/loans", loanRoutes);
 app.use("/api/agents", agentRoutes);
 app.use("/api/regional-admin", regionalAdminRoutes);
+app.use("/api/agreements", require('./routes/agreementRoutes'));
 app.listen(PORT, () => {
   console.log(`✅ Server is running on http://localhost:${PORT}`);
 });

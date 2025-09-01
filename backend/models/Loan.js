@@ -156,6 +156,12 @@ const loanSchema = new mongoose.Schema({
   },
   agreementUrl: String,
   agreementGeneratedDate: Date,
+  agreementStatus: {
+    type: String,
+    enum: ['Pending', 'Generated', 'Sent', 'Signed'],
+    default: 'Pending'
+  },
+  agreementSentDate: Date,
   loanClosure: {
     closureDate: Date,
     closureReason: String,

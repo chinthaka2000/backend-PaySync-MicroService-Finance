@@ -5,7 +5,11 @@ const regionalAdminController = require('../controllers/regionalAdminController'
 // Regional admin dashboard
 router.get('/:regionalAdminId/dashboard', regionalAdminController.getRegionalDashboard);
 
+// Debug endpoint
+router.get('/:regionalAdminId/debug', regionalAdminController.debugRegionalData);
+
 // Loan management
+router.get('/:regionalAdminId/loans', regionalAdminController.getRegionalLoans);
 router.get('/:regionalAdminId/loans/pending', regionalAdminController.getPendingLoansForApproval);
 router.post('/:regionalAdminId/loans/:loanId/approve', regionalAdminController.approveRejectLoan);
 

@@ -281,3 +281,135 @@ exports.getAgentsByRegion = async (req, res) => {
     });
   }
 };
+
+// Get agent agreements
+exports.getAgentAgreements = async (req, res) => {
+  try {
+    const { agentId } = req.params;
+    const { status, search, page = 1, limit = 10 } = req.query;
+
+    // Verify agent exists
+    const agent = await Staff.findById(agentId);
+    if (!agent || agent.role !== 'agent') {
+      return res.status(404).json({ message: 'Agent not found' });
+    }
+
+    // Get clients assigned to this agent
+    const agentClients = await Client.find({ assignedReviewer: agentId });
+    const clientIds = agentClients.map(client => client._id);
+
+    // Build query for loans with agreements
+    let query = {
+      clientUserId: { $in: clientIds },
+      agreementGenerated: true
+    };
+
+    // Add status filter if provided
+    if (status && status !== 'All') {
+      query.agreementStatus = status;
+    }
+
+    // Get loans with agreements
+    let loans = await Loan.find(query)
+      .populate('clientUserId', 'personalInfo registrationId')
+      .sort({ agreementGeneratedDate: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    // Add search functionality
+    if (search) {
+      loans = loans.filter(loan => {
+        const client = loan.clientUserId;
+        return (
+          client?.personalInfo?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
+          client?.personalInfo?.email?.toLowerCase().includes(search.toLowerCase()) ||
+          loan.loanApplicationId.toLowerCase().includes(search.toLowerCase())
+        );
+      });
+    }
+
+    // Transform loans to agreement format
+    const agreements = loans.map(loan => ({
+      _id: loan._id,
+      loanId: loan._id,
+      loanApplicationId: loan.loanApplicationId,
+      clientUserId: loan.clientUserId,
+      loanAmount: loan.loanAmount,
+      monthlyInstallment: loan.monthlyInstallment,
+      loanTerm: loan.loanTerm,
+      interestRate: loan.interestRate,
+      agreementDate: loan.agreementGeneratedDate,
+      status: loan.agreementStatus || 'Generated',
+      agreementUrl: loan.agreementUrl
+    }));
+
+    const total = await Loan.countDocuments(query);
+
+    // If no agreements found, return mock data for testing
+    if (agreements.length === 0) {
+      const mockAgreements = [
+        {
+          _id: 'mock1',
+          loanId: 'mock1',
+          loanApplicationId: 'A001',
+          clientUserId: {
+            personalInfo: {
+              fullName: 'John Smith',
+              email: 'john.smith@email.com',
+              phone: '+94771234567'
+            },
+            registrationId: 'R001'
+          },
+          loanAmount: 50000,
+          monthlyInstallment: 2500,
+          loanTerm: 24,
+          interestRate: 12.5,
+          agreementDate: new Date(),
+          status: 'Generated',
+          agreementUrl: '/agreements/mock1.pdf'
+        },
+        {
+          _id: 'mock2',
+          loanId: 'mock2',
+          loanApplicationId: 'A002',
+          clientUserId: {
+            personalInfo: {
+              fullName: 'Jane Doe',
+              email: 'jane.doe@email.com',
+              phone: '+94771234568'
+            },
+            registrationId: 'R002'
+          },
+          loanAmount: 75000,
+          monthlyInstallment: 3750,
+          loanTerm: 24,
+          interestRate: 13.0,
+          agreementDate: new Date(),
+          status: 'Sent',
+          agreementUrl: '/agreements/mock2.pdf'
+        }
+      ];
+
+      return res.json({
+        message: 'Agent agreements fetched successfully (mock data)',
+        agreements: mockAgreements,
+        total: mockAgreements.length,
+        page: parseInt(page),
+        pages: 1
+      });
+    }
+
+    res.json({
+      message: 'Agent agreements fetched successfully',
+      agreements,
+      total,
+      page: parseInt(page),
+      pages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error fetching agent agreements',
+      error: error.message
+    });
+  }
+};

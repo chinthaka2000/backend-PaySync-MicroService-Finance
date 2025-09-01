@@ -21,4 +21,7 @@ router.put('/:loanId/status', loanController.updateLoanStatus);
 router.post('/:loanId/payments', loanController.addPayment);
 router.get('/:loanId/payments', loanController.getPaymentHistory);
 
+// Agreement management routes
+router.post('/:loanId/generate-agreement', loanController.generateAgreement);
+
 module.exports = router;

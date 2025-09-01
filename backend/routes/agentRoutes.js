@@ -12,4 +12,7 @@ router.get('/', agentController.getAllAgents);
 router.get('/stats', agentController.getAgentStats);
 router.get('/region/:regionId', agentController.getAgentsByRegion);
 
+// Agreement management
+router.get('/:agentId/agreements', agentController.getAgentAgreements);
+
 module.exports = router;

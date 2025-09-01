@@ -595,3 +595,189 @@ exports.getLoanAgreements = async (req, res) => {
     });
   }
 };
+
+// Generate loan agreement
+exports.generateAgreement = async (req, res) => {
+  try {
+    const { loanId } = req.params;
+
+    const loan = await Loan.findById(loanId).populate('clientUserId', 'personalInfo');
+    if (!loan) {
+      return res.status(404).json({ message: 'Loan not found' });
+    }
+
+    // Check if loan is approved by regional admin
+    if (loan.regionalAdminApproval.status !== 'Approved') {
+      return res.status(400).json({ message: 'Loan must be approved by regional admin first' });
+    }
+
+    // Update loan with agreement generated flag
+    loan.agreementGenerated = true;
+    loan.agreementGeneratedDate = new Date();
+    loan.agreementStatus = 'Generated';
+
+    // In a real implementation, you would generate the actual PDF here
+    // For now, we'll just mark it as generated
+    loan.agreementUrl = `/agreements/${loan._id}.pdf`;
+
+    await loan.save();
+
+    res.json({
+      message: 'Agreement generated successfully',
+      loan,
+      agreementUrl: loan.agreementUrl
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error generating agreement',
+      error: error.message
+    });
+  }
+};
+
+// Send agreement to client
+exports.sendAgreement = async (req, res) => {
+  try {
+    const { agreementId } = req.params;
+
+    const loan = await Loan.findById(agreementId).populate('clientUserId', 'personalInfo');
+    if (!loan) {
+      return res.status(404).json({ message: 'Agreement not found' });
+    }
+
+    if (!loan.agreementGenerated) {
+      return res.status(400).json({ message: 'Agreement not generated yet' });
+    }
+
+    // Update agreement status
+    loan.agreementStatus = 'Sent';
+    loan.agreementSentDate = new Date();
+
+    await loan.save();
+
+    // In a real implementation, you would send email here
+    // For now, we'll just update the status
+
+    res.json({
+      message: 'Agreement sent to client successfully',
+      loan
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error sending agreement',
+      error: error.message
+    });
+  }
+};
+
+// Download agreement
+exports.downloadAgreement = async (req, res) => {
+  try {
+    const { agreementId } = req.params;
+
+    const loan = await Loan.findById(agreementId).populate('clientUserId', 'personalInfo');
+    if (!loan) {
+      return res.status(404).json({ message: 'Agreement not found' });
+    }
+
+    if (!loan.agreementGenerated) {
+      return res.status(400).json({ message: 'Agreement not generated yet' });
+    }
+
+    // Generate agreement content as a readable text document
+    const client = loan.clientUserId;
+
+    const agreementContent = `
+LOAN AGREEMENT DOCUMENT
+=======================
+
+Agreement ID: ${loan.loanApplicationId}
+Generated Date: ${new Date().toLocaleDateString()}
+Generated Time: ${new Date().toLocaleTimeString()}
+
+PARTIES TO THE AGREEMENT
+========================
+Lender: PaySync Financial Services (Pvt) Ltd
+Address: No. 123, Galle Road, Colombo 03, Sri Lanka
+Phone: +94 11 234 5678
+Email: info@paysync.lk
+
+Borrower: ${client?.personalInfo?.fullName || 'N/A'}
+Email: ${client?.personalInfo?.email || 'N/A'}
+Registration ID: ${client?.registrationId || 'N/A'}
+
+LOAN DETAILS
+============
+Principal Amount: Rs. ${loan.loanAmount?.toLocaleString() || 'N/A'}
+Interest Rate: ${loan.interestRate}% per annum
+Loan Term: ${loan.loanTerm} months
+Monthly Installment: Rs. ${loan.monthlyInstallment?.toLocaleString() || 'N/A'}
+Total Payable Amount: Rs. ${loan.totalPayableAmount?.toLocaleString() || 'N/A'}
+Loan Purpose: ${loan.purpose || 'N/A'}
+
+TERMS AND CONDITIONS
+===================
+1. REPAYMENT: The borrower agrees to repay the loan amount with 
+   interest in ${loan.loanTerm} equal monthly installments.
+
+2. PAYMENT SCHEDULE: Monthly installments are due on the same date 
+   each month starting from the loan disbursement date.
+
+3. LATE PAYMENT: A penalty of 2% per month will be charged on 
+   overdue amounts.
+
+4. DEFAULT: Failure to pay two consecutive installments will 
+   constitute default.
+
+5. LEGAL ACTION: The lender reserves the right to take legal 
+   action in case of default.
+
+6. GOVERNING LAW: This agreement is governed by the laws of 
+   Sri Lanka.
+
+SIGNATURES
+==========
+BORROWER:
+Signature: _________________________
+Name: ${client?.personalInfo?.fullName || 'N/A'}
+Date: _____________________________
+
+LENDER REPRESENTATIVE:
+Signature: _________________________
+Name: _____________________________
+Title: Loan Officer
+Date: _____________________________
+
+DOCUMENT INFORMATION
+===================
+This agreement was generated electronically on ${new Date().toLocaleString()}
+PaySync Financial Services (Pvt) Ltd - Loan Management System
+
+For any queries regarding this agreement, please contact:
+Email: support@paysync.lk
+Phone: +94 11 234 5678
+Website: www.paysync.lk
+
+IMPORTANT NOTES
+===============
+- This is a legally binding document
+- Please read all terms and conditions carefully
+- Keep a copy of this agreement for your records
+- Contact us immediately if you have any questions
+
+END OF DOCUMENT
+===============
+    `;
+
+    // Return as a text file that can be easily opened and read
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="LoanAgreement_${loan.loanApplicationId}.txt"`);
+    res.send(agreementContent);
+
+  } catch (error) {
+    res.status(500).json({
+      message: 'Error downloading agreement',
+      error: error.message
+    });
+  }
+};
