@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const agentController = require('../controllers/agentController');
 const { authenticate, authorizeRoles, requirePermissions } = require('../middlewares/authMiddleware');
+const { agentRateLimit } = require('../middlewares/security');
 const { PERMISSIONS } = require('../utils/permissions');
 const { validate, agentSchemas, schemas } = require('../validation');
 const Joi = require('joi');
@@ -9,6 +10,9 @@ const { objectId } = schemas;
 
 // All routes require authentication
 router.use(authenticate);
+
+// Apply higher rate limit for agent endpoints
+router.use(agentRateLimit);
 
 // Agent dashboard and profile routes (agents can access their own data)
 router.get('/:agentId/dashboard',

@@ -81,7 +81,7 @@ const validateLoanApplication = async (loanData, user) => {
       // Check for existing active loans
       const existingLoans = await Loan.find({
         clientUserId: loanData.clientUserId,
-        loanStatus: { $in: ['pending', 'approved', 'active'] }
+        loanStatus: { $in: ['Pending', 'Approved', 'Active'] }
       });
 
       if (existingLoans.length > 0) {
@@ -139,7 +139,7 @@ const validateLoanApplication = async (loanData, user) => {
       // Check if guarantor is already guaranteeing too many loans
       const guarantorLoans = await Loan.find({
         'guarantorInfo.idNumber': loanData.guarantorInfo.idNumber,
-        loanStatus: { $in: ['approved', 'active'] }
+        loanStatus: { $in: ['Approved', 'Active'] }
       });
 
       if (guarantorLoans.length >= 3) { // Maximum 3 loans per guarantor

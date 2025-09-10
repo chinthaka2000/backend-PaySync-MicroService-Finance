@@ -3,16 +3,20 @@
  * @module controllers/loanController
  */
 
-const mongoose = require('mongoose');
-const Loan = require('../models/Loan');
-const Client = require('../models/Client');
-const Staff = require('../models/Staff');
-const sendEmail = require('../utils/sendEmail');
-const emailService = require('../services/emailService');
-const { validateLoanApplication, validateLoanStatusUpdate, calculateMonthlyPayment } = require('../validation/businessRules');
-const LoanRepository = require('../repositories/LoanRepository');
-const { AppError } = require('../utils/customErrors');
-const { logger } = require('../utils/logger');
+const mongoose = require("mongoose");
+const Loan = require("../models/Loan");
+const Client = require("../models/Client");
+const Staff = require("../models/Staff");
+const sendEmail = require("../utils/sendEmail");
+const emailService = require("../services/emailService");
+const {
+  validateLoanApplication,
+  validateLoanStatusUpdate,
+  calculateMonthlyPayment,
+} = require("../validation/businessRules");
+const LoanRepository = require("../repositories/LoanRepository");
+const { AppError } = require("../utils/customErrors");
+const { logger } = require("../utils/logger");
 
 /**
  * Create a new loan application with enhanced validation and workflow
@@ -30,7 +34,7 @@ const { logger } = require('../utils/logger');
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with loan creation result
  * @throws {AppError} When validation fails or client not found
- * 
+ *
  * @example
  * // POST /api/loans
  * {
@@ -45,7 +49,7 @@ const { logger } = require('../utils/logger');
  *     "phone": "1234567890"
  *   }
  * }
- * 
+ *
  * @example
  * // Success Response (201)
  * {
@@ -68,39 +72,39 @@ exports.createLoanApplication = async (req, res) => {
     const user = req.user; // From authentication middleware
     const loanRepository = new LoanRepository();
 
-    logger.info('Creating loan application', {
+    logger.info("Creating loan application", {
       userId: user.userId,
       clientId: loanData.clientUserId,
-      loanAmount: loanData.loanAmount
+      loanAmount: loanData.loanAmount,
     });
 
     // Perform comprehensive business rule validation
     const validation = await validateLoanApplication(loanData, user);
 
     if (!validation.isValid) {
-      logger.warn('Loan application validation failed', {
+      logger.warn("Loan application validation failed", {
         userId: user.userId,
-        errors: validation.errors
+        errors: validation.errors,
       });
 
       return res.status(400).json({
         success: false,
         error: {
-          code: 'BUSINESS_RULE_VIOLATION',
-          message: 'Loan application violates business rules',
+          code: "BUSINESS_RULE_VIOLATION",
+          message: "Loan application violates business rules",
           details: validation.errors,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
 
     // Get client information for workflow assignment
     const client = await Client.findById(loanData.clientUserId)
-      .populate('assignedAgent')
-      .populate('assignedRegionalManager');
+      .populate("assignedAgent")
+      .populate("assignedRegionalManager");
 
     if (!client) {
-      throw new AppError('Client not found', 404, 'CLIENT_NOT_FOUND');
+      throw new AppError("Client not found", 404, "CLIENT_NOT_FOUND");
     }
 
     // Calculate monthly payment and total payable amount
@@ -121,7 +125,7 @@ exports.createLoanApplication = async (req, res) => {
       loanApplicationId,
       monthlyInstallment: monthlyPayment,
       totalPayableAmount,
-      loanStatus: 'pending',
+      loanStatus: "pending",
 
       // Assign to agent and regional manager from client
       assignedAgent: client.assignedAgent?._id,
@@ -130,51 +134,55 @@ exports.createLoanApplication = async (req, res) => {
 
       // Initialize workflow state
       workflowState: {
-        currentStage: 'application_submitted',
-        stageHistory: [{
-          stage: 'application_submitted',
-          enteredAt: new Date(),
-          performedBy: user.userId
-        }]
+        currentStage: "application_submitted",
+        stageHistory: [
+          {
+            stage: "application_submitted",
+            enteredAt: new Date(),
+            performedBy: user.userId,
+          },
+        ],
       },
 
       // Initialize review states
       agentReview: {
-        status: 'pending',
-        assignedTo: client.assignedAgent?._id
+        status: "pending",
+        assignedTo: client.assignedAgent?._id,
       },
       regionalAdminApproval: {
-        status: 'pending',
-        assignedTo: client.assignedRegionalManager?._id
+        status: "pending",
+        assignedTo: client.assignedRegionalManager?._id,
       },
 
       // Initialize audit trail
-      auditTrail: [{
-        action: 'loan_created',
-        performedBy: user.userId,
-        timestamp: new Date(),
-        changes: {
-          status: 'pending',
-          stage: 'application_submitted',
-          assignedAgent: client.assignedAgent?._id,
-          assignedRegionalManager: client.assignedRegionalManager?._id
+      auditTrail: [
+        {
+          action: "loan_created",
+          performedBy: user.userId,
+          timestamp: new Date(),
+          changes: {
+            status: "pending",
+            stage: "application_submitted",
+            assignedAgent: client.assignedAgent?._id,
+            assignedRegionalManager: client.assignedRegionalManager?._id,
+          },
+          ipAddress: req.ip,
+          userAgent: req.get("User-Agent"),
         },
-        ipAddress: req.ip,
-        userAgent: req.get('User-Agent')
-      }],
+      ],
 
       // Calculated fields for performance
       calculatedFields: {
         totalInterest: totalPayableAmount - loanData.loanAmount,
         remainingBalance: loanData.loanAmount,
         nextPaymentDate: null, // Will be set when loan is approved
-        daysOverdue: 0
+        daysOverdue: 0,
       },
 
       // Searchable text for full-text search
       searchableText: `${loanApplicationId} ${client.personalInfo?.fullName} ${loanData.product} ${loanData.purpose}`,
 
-      createdBy: user.userId
+      createdBy: user.userId,
     });
 
     await newLoan.save();
@@ -184,43 +192,42 @@ exports.createLoanApplication = async (req, res) => {
       try {
         await sendEmail(
           client.assignedAgent.personalInfo.email,
-          'New Loan Application Assigned',
+          "New Loan Application Assigned",
           `A new loan application (${loanApplicationId}) has been assigned to you for review. 
            Client: ${client.personalInfo?.fullName}
            Amount: Rs. ${loanData.loanAmount.toLocaleString()}
            Please review and process the application.`
         );
       } catch (emailError) {
-        logger.error('Failed to send notification email', emailError, {
+        logger.error("Failed to send notification email", emailError, {
           loanId: newLoan._id,
-          agentEmail: client.assignedAgent.personalInfo.email
+          agentEmail: client.assignedAgent.personalInfo.email,
         });
       }
     }
 
-    logger.info('Loan application created successfully', {
+    logger.info("Loan application created successfully", {
       loanId: newLoan._id,
       loanApplicationId,
-      userId: user.userId
+      userId: user.userId,
     });
 
     res.status(201).json({
       success: true,
-      message: 'Loan application created successfully',
+      message: "Loan application created successfully",
       data: {
         loan: newLoan,
         loanId: newLoan._id,
         loanApplicationId,
         monthlyPayment,
-        totalPayableAmount
+        totalPayableAmount,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error creating loan application', error, {
+    logger.error("Error creating loan application", error, {
       userId: req.user?.userId,
-      loanData: req.body
+      loanData: req.body,
     });
 
     if (error instanceof AppError) {
@@ -229,18 +236,18 @@ exports.createLoanApplication = async (req, res) => {
         error: {
           code: error.errorCode,
           message: error.message,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error creating loan application',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error creating loan application",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -258,10 +265,10 @@ exports.createLoanApplication = async (req, res) => {
  * @param {number} req.query.limit - Number of items per page
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with agent's loans
- * 
+ *
  * @example
  * // GET /api/loans/agent/:agentId?status=pending&page=1&limit=10
- * 
+ *
  * @example
  * // Success Response (200)
  * {
@@ -286,37 +293,55 @@ exports.getAgentLoans = async (req, res) => {
       workflowStage,
       page = 1,
       limit = 10,
-      search = '',
-      sortBy = 'createdAt',
-      sortOrder = 'desc',
+      search = "",
+      sortBy = "createdAt",
+      sortOrder = "desc",
       startDate,
       endDate,
       minAmount,
       maxAmount,
       product,
-      purpose
+      purpose,
     } = req.query;
 
     const loanRepository = new LoanRepository();
 
-    logger.debug('Getting agent loans with filters', {
+    logger.debug("Getting agent loans with filters", {
       agentId,
-      filters: { status, workflowStage, search, startDate, endDate }
+      filters: { status, workflowStage, search, startDate, endDate },
     });
 
     // Build filters
     const filters = { assignedAgent: agentId };
 
     if (status) {
+      // Normalize status values to match database enum values
+      const normalizeStatus = (statusValue) => {
+        const statusMap = {
+          pending: "Pending",
+          approved: "Approved",
+          rejected: "Rejected",
+          active: "Active",
+          completed: "Completed",
+          defaulted: "Defaulted",
+          under_review: "Under Review",
+          Active: "Active",
+          Pending: "Pending",
+          Approved: "Approved",
+          Rejected: "Rejected",
+        };
+        return statusMap[statusValue] || statusValue;
+      };
+
       if (Array.isArray(status)) {
-        filters.loanStatus = { $in: status };
+        filters.loanStatus = { $in: status.map(normalizeStatus) };
       } else {
-        filters.loanStatus = status;
+        filters.loanStatus = normalizeStatus(status);
       }
     }
 
     if (workflowStage) {
-      filters['workflowState.currentStage'] = workflowStage;
+      filters["workflowState.currentStage"] = workflowStage;
     }
 
     if (startDate || endDate) {
@@ -332,11 +357,11 @@ exports.getAgentLoans = async (req, res) => {
     }
 
     if (product) {
-      filters.product = { $regex: product, $options: 'i' };
+      filters.product = { $regex: product, $options: "i" };
     }
 
     if (purpose) {
-      filters.purpose = { $regex: purpose, $options: 'i' };
+      filters.purpose = { $regex: purpose, $options: "i" };
     }
 
     // Handle search
@@ -346,32 +371,32 @@ exports.getAgentLoans = async (req, res) => {
         filters.$text = { $search: search };
       } catch (textSearchError) {
         // Fallback to regex search
-        const searchRegex = { $regex: search, $options: 'i' };
+        const searchRegex = { $regex: search, $options: "i" };
         filters.$or = [
           { loanApplicationId: searchRegex },
           { product: searchRegex },
           { purpose: searchRegex },
-          { searchableText: searchRegex }
+          { searchableText: searchRegex },
         ];
       }
     }
 
     // Build sort options
     const sortOptions = {};
-    sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
 
     // Query options
     const options = {
       page: parseInt(page),
       limit: parseInt(limit),
       populate: [
-        { path: 'clientUserId', select: 'personalInfo registrationId status' },
-        { path: 'assignedAgent', select: 'personalInfo role' },
-        { path: 'assignedRegionalManager', select: 'personalInfo role' },
-        { path: 'agentReview.reviewedBy', select: 'personalInfo' },
-        { path: 'regionalAdminApproval.approvedBy', select: 'personalInfo' }
+        { path: "clientUserId", select: "personalInfo registrationId status" },
+        { path: "assignedAgent", select: "personalInfo role" },
+        { path: "assignedRegionalManager", select: "personalInfo role" },
+        { path: "agentReview.reviewedBy", select: "personalInfo" },
+        { path: "regionalAdminApproval.approvedBy", select: "personalInfo" },
       ],
-      sort: sortOptions
+      sort: sortOptions,
     };
 
     // Get paginated results
@@ -380,10 +405,10 @@ exports.getAgentLoans = async (req, res) => {
     const total = result.totalDocs || loans.length;
 
     // Transform to match frontend interface
-    const transformedLoans = loans.map(loan => ({
+    const transformedLoans = loans.map((loan) => ({
       id: loan._id.toString(),
       loanApplicationId: loan.loanApplicationId,
-      borrowerName: loan.clientUserId?.personalInfo?.fullName || 'Unknown',
+      borrowerName: loan.clientUserId?.personalInfo?.fullName || "Unknown",
       borrowerId: loan.clientUserId?._id?.toString(),
       registrationId: loan.clientUserId?.registrationId,
       amount: loan.loanAmount,
@@ -401,9 +426,14 @@ exports.getAgentLoans = async (req, res) => {
       purpose: loan.purpose,
 
       // Payment information
-      totalPaid: loan.paymentHistory?.reduce((sum, payment) =>
-        payment.status === 'approved' ? sum + payment.amount : sum, 0) || 0,
-      remainingBalance: loan.calculatedFields?.remainingBalance || loan.loanAmount,
+      totalPaid:
+        loan.paymentHistory?.reduce(
+          (sum, payment) =>
+            payment.status === "approved" ? sum + payment.amount : sum,
+          0
+        ) || 0,
+      remainingBalance:
+        loan.calculatedFields?.remainingBalance || loan.loanAmount,
       nextPaymentDate: loan.calculatedFields?.nextPaymentDate,
       daysOverdue: loan.calculatedFields?.daysOverdue || 0,
 
@@ -413,14 +443,14 @@ exports.getAgentLoans = async (req, res) => {
         reviewDate: loan.agentReview?.reviewDate,
         comments: loan.agentReview?.comments,
         rating: loan.agentReview?.rating,
-        reviewedBy: loan.agentReview?.reviewedBy?.personalInfo
+        reviewedBy: loan.agentReview?.reviewedBy?.personalInfo,
       },
 
       regionalApproval: {
         status: loan.regionalAdminApproval?.status,
         approvalDate: loan.regionalAdminApproval?.approvalDate,
         comments: loan.regionalAdminApproval?.comments,
-        approvedBy: loan.regionalAdminApproval?.approvedBy?.personalInfo
+        approvedBy: loan.regionalAdminApproval?.approvedBy?.personalInfo,
       },
 
       // Dates
@@ -428,13 +458,13 @@ exports.getAgentLoans = async (req, res) => {
       completedDate: loan.completionDate,
 
       // Client status
-      clientStatus: loan.clientUserId?.status
+      clientStatus: loan.clientUserId?.status,
     }));
 
-    logger.debug('Agent loans retrieved', {
+    logger.debug("Agent loans retrieved", {
       agentId,
       totalLoans: total,
-      returnedLoans: transformedLoans.length
+      returnedLoans: transformedLoans.length,
     });
 
     res.json({
@@ -445,7 +475,7 @@ exports.getAgentLoans = async (req, res) => {
           total,
           page: parseInt(page),
           pages: Math.ceil(total / parseInt(limit)),
-          limit: parseInt(limit)
+          limit: parseInt(limit),
         },
         filters: {
           status,
@@ -456,25 +486,24 @@ exports.getAgentLoans = async (req, res) => {
           minAmount,
           maxAmount,
           product,
-          purpose
-        }
+          purpose,
+        },
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error fetching agent loans', error, {
+    logger.error("Error fetching agent loans", error, {
       agentId: req.params.agentId,
-      filters: req.query
+      filters: req.query,
     });
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error fetching agent loans',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error fetching agent loans",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -485,23 +514,23 @@ exports.getLoanById = async (req, res) => {
     const { id } = req.params;
 
     const loan = await Loan.findOne({ loanApplicationId: id })
-      .populate('clientUserId')
-      .populate('agentReview.reviewedBy', 'name email')
-      .populate('regionalAdminApproval.approvedBy', 'name email')
-      .populate('paymentHistory.approvedBy', 'name email');
+      .populate("clientUserId")
+      .populate("agentReview.reviewedBy", "name email")
+      .populate("regionalAdminApproval.approvedBy", "name email")
+      .populate("paymentHistory.approvedBy", "name email");
 
     if (!loan) {
-      return res.status(404).json({ message: 'Loan not found' });
+      return res.status(404).json({ message: "Loan not found" });
     }
 
     res.json({
-      message: 'Loan details fetched successfully',
-      loan
+      message: "Loan details fetched successfully",
+      loan,
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Error fetching loan details',
-      error: error.message
+      message: "Error fetching loan details",
+      error: error.message,
     });
   }
 };
@@ -514,32 +543,41 @@ exports.agentReviewLoan = async (req, res) => {
     const user = req.user;
     const loanRepository = new LoanRepository();
 
-    logger.info('Agent reviewing loan', {
+    logger.info("Agent reviewing loan", {
       loanId,
       agentId: user.userId,
-      status
+      status,
     });
 
     const loan = await Loan.findOne({
-      $or: [
-        { loanApplicationId: loanId },
-        { _id: loanId }
-      ]
-    }).populate('clientUserId').populate('assignedAgent');
+      $or: [{ loanApplicationId: loanId }, { _id: loanId }],
+    })
+      .populate("clientUserId")
+      .populate("assignedAgent");
 
     if (!loan) {
-      throw new AppError('Loan not found', 404, 'LOAN_NOT_FOUND');
+      throw new AppError("Loan not found", 404, "LOAN_NOT_FOUND");
     }
 
     // Verify agent has permission to review this loan
     if (loan.assignedAgent?._id.toString() !== user.userId) {
-      throw new AppError('Not authorized to review this loan', 403, 'UNAUTHORIZED_REVIEW');
+      throw new AppError(
+        "Not authorized to review this loan",
+        403,
+        "UNAUTHORIZED_REVIEW"
+      );
     }
 
     // Validate current workflow stage
-    if (loan.workflowState.currentStage !== 'application_submitted' &&
-      loan.agentReview.status !== 'pending') {
-      throw new AppError('Loan is not in a reviewable state', 400, 'INVALID_WORKFLOW_STATE');
+    if (
+      loan.workflowState.currentStage !== "application_submitted" &&
+      loan.agentReview.status !== "pending"
+    ) {
+      throw new AppError(
+        "Loan is not in a reviewable state",
+        400,
+        "INVALID_WORKFLOW_STATE"
+      );
     }
 
     // Update agent review
@@ -549,21 +587,21 @@ exports.agentReviewLoan = async (req, res) => {
       status: status.toLowerCase(),
       comments,
       rating: rating || null,
-      assignedTo: user.userId
+      assignedTo: user.userId,
     };
 
     // Update workflow state and loan status
     let newWorkflowStage;
     let newLoanStatus;
 
-    if (status.toLowerCase() === 'approved') {
-      newWorkflowStage = 'agent_approved';
-      newLoanStatus = 'under_review'; // Ready for regional manager approval
-    } else if (status.toLowerCase() === 'rejected') {
-      newWorkflowStage = 'agent_rejected';
-      newLoanStatus = 'rejected';
+    if (status.toLowerCase() === "approved") {
+      newWorkflowStage = "agent_approved";
+      newLoanStatus = "under_review"; // Ready for regional manager approval
+    } else if (status.toLowerCase() === "rejected") {
+      newWorkflowStage = "agent_rejected";
+      newLoanStatus = "rejected";
     } else {
-      throw new AppError('Invalid review status', 400, 'INVALID_STATUS');
+      throw new AppError("Invalid review status", 400, "INVALID_STATUS");
     }
 
     // Advance workflow stage
@@ -578,11 +616,11 @@ exports.agentReviewLoan = async (req, res) => {
       changes: {
         agentReviewStatus: status.toLowerCase(),
         workflowStage: newWorkflowStage,
-        loanStatus: newLoanStatus
+        loanStatus: newLoanStatus,
       },
       ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-      comments
+      userAgent: req.get("User-Agent"),
+      comments,
     });
 
     await loan.save();
@@ -597,17 +635,21 @@ exports.agentReviewLoan = async (req, res) => {
         const emailMessage = `
           Dear ${client.personalInfo.fullName},
           
-          Your loan application ${loan.loanApplicationId} has been ${status.toLowerCase()} by your assigned agent.
+          Your loan application ${
+            loan.loanApplicationId
+          } has been ${status.toLowerCase()} by your assigned agent.
           
           Application Details:
           - Loan Amount: Rs. ${loan.loanAmount.toLocaleString()}
           - Status: ${status}
-          ${comments ? `- Agent Comments: ${comments}` : ''}
-          ${rating ? `- Agent Rating: ${rating}/5` : ''}
+          ${comments ? `- Agent Comments: ${comments}` : ""}
+          ${rating ? `- Agent Rating: ${rating}/5` : ""}
           
-          ${status.toLowerCase() === 'approved' ?
-            'Your application will now be reviewed by the regional manager for final approval.' :
-            'Please contact your agent for more information about reapplying.'}
+          ${
+            status.toLowerCase() === "approved"
+              ? "Your application will now be reviewed by the regional manager for final approval."
+              : "Please contact your agent for more information about reapplying."
+          }
           
           Best regards,
           PaySync Financial Services
@@ -615,56 +657,68 @@ exports.agentReviewLoan = async (req, res) => {
 
         await sendEmail(client.personalInfo.email, emailSubject, emailMessage);
       } catch (emailError) {
-        logger.error('Failed to send client notification', emailError, {
+        logger.error("Failed to send client notification", emailError, {
           loanId: loan._id,
-          clientEmail: client.personalInfo.email
+          clientEmail: client.personalInfo.email,
         });
       }
     }
 
     // Notify regional manager if approved
-    if (status.toLowerCase() === 'approved' && loan.assignedRegionalManager) {
+    if (status.toLowerCase() === "approved" && loan.assignedRegionalManager) {
       try {
-        const regionalManager = await Staff.findById(loan.assignedRegionalManager);
+        const regionalManager = await Staff.findById(
+          loan.assignedRegionalManager
+        );
         if (regionalManager?.personalInfo?.email) {
           await sendEmail(
             regionalManager.personalInfo.email,
             `Loan Application Ready for Approval - ${loan.loanApplicationId}`,
-            `A loan application (${loan.loanApplicationId}) has been approved by the agent and is ready for your review.
+            `A loan application (${
+              loan.loanApplicationId
+            }) has been approved by the agent and is ready for your review.
              Client: ${client?.personalInfo?.fullName}
              Amount: Rs. ${loan.loanAmount.toLocaleString()}
-             Agent: ${loan.assignedAgent?.personalInfo?.firstName} ${loan.assignedAgent?.personalInfo?.lastName}
+             Agent: ${loan.assignedAgent?.personalInfo?.firstName} ${
+              loan.assignedAgent?.personalInfo?.lastName
+            }
              Please review and approve/reject the application.`
           );
         }
       } catch (emailError) {
-        logger.error('Failed to send regional manager notification', emailError, {
-          loanId: loan._id
-        });
+        logger.error(
+          "Failed to send regional manager notification",
+          emailError,
+          {
+            loanId: loan._id,
+          }
+        );
       }
     }
 
-    logger.info('Loan review completed successfully', {
+    logger.info("Loan review completed successfully", {
       loanId: loan._id,
       agentId: user.userId,
-      status: status.toLowerCase()
+      status: status.toLowerCase(),
     });
 
     res.json({
       success: true,
-      message: 'Loan review completed successfully',
+      message: "Loan review completed successfully",
       data: {
         loan,
         workflowStage: newWorkflowStage,
-        nextStep: status.toLowerCase() === 'approved' ? 'regional_manager_approval' : 'application_closed'
+        nextStep:
+          status.toLowerCase() === "approved"
+            ? "regional_manager_approval"
+            : "application_closed",
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error reviewing loan', error, {
+    logger.error("Error reviewing loan", error, {
       loanId: req.params.loanId,
-      agentId: req.user?.userId
+      agentId: req.user?.userId,
     });
 
     if (error instanceof AppError) {
@@ -673,18 +727,18 @@ exports.agentReviewLoan = async (req, res) => {
         error: {
           code: error.errorCode,
           message: error.message,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error reviewing loan',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error reviewing loan",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -696,10 +750,10 @@ exports.getAgentLoanStats = async (req, res) => {
     const { startDate, endDate } = req.query;
     const loanRepository = new LoanRepository();
 
-    logger.debug('Getting agent loan statistics', {
+    logger.debug("Getting agent loan statistics", {
       agentId,
       startDate,
-      endDate
+      endDate,
     });
 
     // Get performance statistics using repository
@@ -707,93 +761,111 @@ exports.getAgentLoanStats = async (req, res) => {
     if (startDate) dateRange.startDate = startDate;
     if (endDate) dateRange.endDate = endDate;
 
-    const performanceStats = await loanRepository.getAgentPerformanceStats(agentId, dateRange);
+    const performanceStats = await loanRepository.getAgentPerformanceStats(
+      agentId,
+      dateRange
+    );
 
     // Get additional statistics
     const additionalStats = await Loan.aggregate([
       {
         $match: {
           assignedAgent: new mongoose.Types.ObjectId(agentId),
-          ...(startDate || endDate ? {
-            createdAt: {
-              ...(startDate && { $gte: new Date(startDate) }),
-              ...(endDate && { $lte: new Date(endDate) })
-            }
-          } : {})
-        }
+          ...(startDate || endDate
+            ? {
+                createdAt: {
+                  ...(startDate && { $gte: new Date(startDate) }),
+                  ...(endDate && { $lte: new Date(endDate) }),
+                },
+              }
+            : {}),
+        },
+      },
+      // Ensure createdAt is a Date object to handle string dates from legacy data
+      {
+        $addFields: {
+          createdAt: {
+            $cond: {
+              if: { $eq: [{ $type: "$createdAt" }, "string"] },
+              then: { $dateFromString: { dateString: "$createdAt" } },
+              else: "$createdAt",
+            },
+          },
+        },
       },
       {
         $facet: {
           statusBreakdown: [
             {
               $group: {
-                _id: '$loanStatus',
+                _id: "$loanStatus",
                 count: { $sum: 1 },
-                totalAmount: { $sum: '$loanAmount' }
-              }
-            }
+                totalAmount: { $sum: "$loanAmount" },
+              },
+            },
           ],
           workflowBreakdown: [
             {
               $group: {
-                _id: '$workflowState.currentStage',
-                count: { $sum: 1 }
-              }
-            }
+                _id: "$workflowState.currentStage",
+                count: { $sum: 1 },
+              },
+            },
           ],
           monthlyTrends: [
             {
               $group: {
                 _id: {
-                  year: { $year: '$createdAt' },
-                  month: { $month: '$createdAt' }
+                  year: { $year: "$createdAt" },
+                  month: { $month: "$createdAt" },
                 },
                 count: { $sum: 1 },
-                amount: { $sum: '$loanAmount' }
-              }
+                amount: { $sum: "$loanAmount" },
+              },
             },
-            { $sort: { '_id.year': 1, '_id.month': 1 } }
+            { $sort: { "_id.year": 1, "_id.month": 1 } },
           ],
           commissionCalculation: [
             {
               $match: {
-                loanStatus: { $in: ['approved', 'active', 'completed'] }
-              }
+                loanStatus: { $in: ["Approved", "Active", "Completed"] },
+              },
             },
             {
               $group: {
                 _id: null,
-                totalCommissionableAmount: { $sum: '$loanAmount' }
-              }
-            }
-          ]
-        }
-      }
+                totalCommissionableAmount: { $sum: "$loanAmount" },
+              },
+            },
+          ],
+        },
+      },
     ]);
 
     const stats = additionalStats[0] || {};
     const commissionRate = 0.02; // 2% commission
-    const totalCommissionableAmount = stats.commissionCalculation?.[0]?.totalCommissionableAmount || 0;
+    const totalCommissionableAmount =
+      stats.commissionCalculation?.[0]?.totalCommissionableAmount || 0;
     const commissionEarned = totalCommissionableAmount * commissionRate;
 
     // Format status breakdown
     const statusCounts = {};
-    stats.statusBreakdown?.forEach(item => {
+    stats.statusBreakdown?.forEach((item) => {
       statusCounts[item._id] = {
         count: item.count,
-        totalAmount: item.totalAmount
+        totalAmount: item.totalAmount,
       };
     });
 
     // Format workflow breakdown
     const workflowCounts = {};
-    stats.workflowBreakdown?.forEach(item => {
+    stats.workflowBreakdown?.forEach((item) => {
       workflowCounts[item._id] = item.count;
     });
 
-    logger.debug('Agent statistics calculated', {
+    logger.debug("Agent statistics calculated", {
       agentId,
-      totalApplications: performanceStats.totalApplications
+      totalApplications: performanceStats.totalApplications,
     });
 
     res.json({
@@ -829,23 +901,22 @@ exports.getAgentLoanStats = async (req, res) => {
         completeLoans: statusCounts.completed?.count || 0,
         pendingApplications: performanceStats.pendingLoans,
         totalLoanAmount: performanceStats.totalAmount,
-        averageLoanAmount: performanceStats.averageAmount
+        averageLoanAmount: performanceStats.averageAmount,
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error fetching agent loan statistics', error, {
-      agentId: req.params.agentId
+    logger.error("Error fetching agent loan statistics", error, {
+      agentId: req.params.agentId,
     });
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error fetching loan statistics',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error fetching loan statistics",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -857,24 +928,24 @@ exports.getPendingLoansForAgent = async (req, res) => {
 
     // Find clients assigned to this agent
     const agentClients = await Client.find({ assignedReviewer: agentId });
-    const clientIds = agentClients.map(client => client._id);
+    const clientIds = agentClients.map((client) => client._id);
 
     const pendingLoans = await Loan.find({
       clientUserId: { $in: clientIds },
-      'agentReview.status': 'Pending'
+      "agentReview.status": "Pending",
     })
-      .populate('clientUserId', 'personalInfo registrationId')
+      .populate("clientUserId", "personalInfo registrationId")
       .sort({ createdAt: -1 });
 
     res.json({
-      message: 'Pending loans fetched successfully',
+      message: "Pending loans fetched successfully",
       loans: pendingLoans,
-      count: pendingLoans.length
+      count: pendingLoans.length,
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Error fetching pending loans',
-      error: error.message
+      message: "Error fetching pending loans",
+      error: error.message,
     });
   }
 };
@@ -891,14 +962,14 @@ exports.getPendingLoansForAgent = async (req, res) => {
  * @param {Object} req.user - Authenticated regional manager
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with approval result
- * 
+ *
  * @example
  * // PUT /api/loans/:loanId/regional-approval
  * {
  *   "decision": "approve",
  *   "comments": "All documentation verified and approved"
  * }
- * 
+ *
  * @example
  * // Success Response (200)
  * {
@@ -924,50 +995,64 @@ exports.regionalManagerApproval = async (req, res) => {
     const user = req.user;
     const loanRepository = new LoanRepository();
 
-    logger.info('Regional manager reviewing loan', {
+    logger.info("Regional manager reviewing loan", {
       loanId,
       regionalManagerId: user.userId,
-      status
+      status,
     });
 
     const loan = await Loan.findOne({
-      $or: [
-        { loanApplicationId: loanId },
-        { _id: loanId }
-      ]
-    }).populate('clientUserId').populate('assignedAgent').populate('assignedRegionalManager');
+      $or: [{ loanApplicationId: loanId }, { _id: loanId }],
+    })
+      .populate("clientUserId")
+      .populate("assignedAgent")
+      .populate("assignedRegionalManager");
 
     if (!loan) {
-      throw new AppError('Loan not found', 404, 'LOAN_NOT_FOUND');
+      throw new AppError("Loan not found", 404, "LOAN_NOT_FOUND");
     }
 
     // Verify regional manager has permission
     if (loan.assignedRegionalManager?._id.toString() !== user.userId) {
-      throw new AppError('Not authorized to approve this loan', 403, 'UNAUTHORIZED_APPROVAL');
+      throw new AppError(
+        "Not authorized to approve this loan",
+        403,
+        "UNAUTHORIZED_APPROVAL"
+      );
     }
 
     // Validate current workflow state
-    if (loan.workflowState.currentStage !== 'agent_approved' ||
-      loan.agentReview.status !== 'approved') {
-      throw new AppError('Loan must be approved by agent first', 400, 'INVALID_WORKFLOW_STATE');
+    if (
+      loan.workflowState.currentStage !== "agent_approved" ||
+      loan.agentReview.status !== "approved"
+    ) {
+      throw new AppError(
+        "Loan must be approved by agent first",
+        400,
+        "INVALID_WORKFLOW_STATE"
+      );
     }
 
     // Perform business rule validation for status update
-    const validation = await validateLoanStatusUpdate(loan._id, status.toLowerCase(), user);
+    const validation = await validateLoanStatusUpdate(
+      loan._id,
+      status.toLowerCase(),
+      user
+    );
     if (!validation.isValid) {
-      logger.warn('Loan status update validation failed', {
+      logger.warn("Loan status update validation failed", {
         loanId: loan._id,
-        errors: validation.errors
+        errors: validation.errors,
       });
 
       return res.status(400).json({
         success: false,
         error: {
-          code: 'BUSINESS_RULE_VIOLATION',
-          message: 'Loan status update violates business rules',
+          code: "BUSINESS_RULE_VIOLATION",
+          message: "Loan status update violates business rules",
           details: validation.errors,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
 
@@ -978,25 +1063,26 @@ exports.regionalManagerApproval = async (req, res) => {
       status: status.toLowerCase(),
       comments,
       conditions: conditions || [],
-      assignedTo: user.userId
+      assignedTo: user.userId,
     };
 
     // Update workflow state and loan status
     let newWorkflowStage;
     let newLoanStatus;
 
-    if (status.toLowerCase() === 'approved') {
-      newWorkflowStage = 'regional_approved';
-      newLoanStatus = 'approved';
+    if (status.toLowerCase() === "approved") {
+      newWorkflowStage = "regional_approved";
+      newLoanStatus = "approved";
 
       // Set next payment date (first payment due in 30 days)
-      loan.calculatedFields.nextPaymentDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
-
-    } else if (status.toLowerCase() === 'rejected') {
-      newWorkflowStage = 'regional_rejected';
-      newLoanStatus = 'rejected';
+      loan.calculatedFields.nextPaymentDate = new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      );
+    } else if (status.toLowerCase() === "rejected") {
+      newWorkflowStage = "regional_rejected";
+      newLoanStatus = "rejected";
     } else {
-      throw new AppError('Invalid approval status', 400, 'INVALID_STATUS');
+      throw new AppError("Invalid approval status", 400, "INVALID_STATUS");
     }
 
     // Advance workflow stage
@@ -1012,11 +1098,11 @@ exports.regionalManagerApproval = async (req, res) => {
         regionalApprovalStatus: status.toLowerCase(),
         workflowStage: newWorkflowStage,
         loanStatus: newLoanStatus,
-        conditions: conditions || []
+        conditions: conditions || [],
       },
       ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-      comments
+      userAgent: req.get("User-Agent"),
+      comments,
     });
 
     await loan.save();
@@ -1031,23 +1117,29 @@ exports.regionalManagerApproval = async (req, res) => {
         let emailMessage = `
           Dear ${client.personalInfo.fullName},
           
-          Your loan application ${loan.loanApplicationId} has been ${status.toLowerCase()} by the regional manager.
+          Your loan application ${
+            loan.loanApplicationId
+          } has been ${status.toLowerCase()} by the regional manager.
           
           Application Details:
           - Loan Amount: Rs. ${loan.loanAmount.toLocaleString()}
           - Monthly Payment: Rs. ${loan.monthlyInstallment.toLocaleString()}
           - Status: ${status}
-          ${comments ? `- Manager Comments: ${comments}` : ''}
+          ${comments ? `- Manager Comments: ${comments}` : ""}
         `;
 
-        if (status.toLowerCase() === 'approved') {
+        if (status.toLowerCase() === "approved") {
           emailMessage += `
           
           Congratulations! Your loan has been approved. 
-          ${conditions && conditions.length > 0 ? `
+          ${
+            conditions && conditions.length > 0
+              ? `
           Please note the following conditions:
-          ${conditions.map(condition => `- ${condition}`).join('\n')}
-          ` : ''}
+          ${conditions.map((condition) => `- ${condition}`).join("\n")}
+          `
+              : ""
+          }
           
           Next Steps:
           - Agreement generation will begin shortly
@@ -1070,8 +1162,8 @@ exports.regionalManagerApproval = async (req, res) => {
 
         await sendEmail(client.personalInfo.email, emailSubject, emailMessage);
       } catch (emailError) {
-        logger.error('Failed to send client notification', emailError, {
-          loanId: loan._id
+        logger.error("Failed to send client notification", emailError, {
+          loanId: loan._id,
         });
       }
     }
@@ -1082,38 +1174,46 @@ exports.regionalManagerApproval = async (req, res) => {
         await sendEmail(
           loan.assignedAgent.personalInfo.email,
           `Loan Application ${status} - ${loan.loanApplicationId}`,
-          `The loan application ${loan.loanApplicationId} for client ${client?.personalInfo?.fullName} has been ${status.toLowerCase()} by the regional manager.
-           ${comments ? `Comments: ${comments}` : ''}
-           ${status.toLowerCase() === 'approved' ? 'You can now proceed with agreement generation.' : ''}`
+          `The loan application ${loan.loanApplicationId} for client ${
+            client?.personalInfo?.fullName
+          } has been ${status.toLowerCase()} by the regional manager.
+           ${comments ? `Comments: ${comments}` : ""}
+           ${
+             status.toLowerCase() === "approved"
+               ? "You can now proceed with agreement generation."
+               : ""
+           }`
         );
       } catch (emailError) {
-        logger.error('Failed to send agent notification', emailError, {
-          loanId: loan._id
+        logger.error("Failed to send agent notification", emailError, {
+          loanId: loan._id,
         });
       }
     }
 
-    logger.info('Regional manager approval completed', {
+    logger.info("Regional manager approval completed", {
       loanId: loan._id,
       regionalManagerId: user.userId,
-      status: status.toLowerCase()
+      status: status.toLowerCase(),
     });
 
     res.json({
       success: true,
-      message: 'Loan approval completed successfully',
+      message: "Loan approval completed successfully",
       data: {
         loan,
         workflowStage: newWorkflowStage,
-        nextStep: status.toLowerCase() === 'approved' ? 'agreement_generation' : 'application_closed'
+        nextStep:
+          status.toLowerCase() === "approved"
+            ? "agreement_generation"
+            : "application_closed",
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error in regional manager approval', error, {
+    logger.error("Error in regional manager approval", error, {
       loanId: req.params.loanId,
-      regionalManagerId: req.user?.userId
+      regionalManagerId: req.user?.userId,
     });
 
     if (error instanceof AppError) {
@@ -1122,18 +1222,18 @@ exports.regionalManagerApproval = async (req, res) => {
         error: {
           code: error.errorCode,
           message: error.message,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error processing loan approval',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error processing loan approval",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -1150,14 +1250,14 @@ exports.regionalManagerApproval = async (req, res) => {
  * @param {Object} req.user - Authenticated user making the change
  * @param {Object} res - Express response object
  * @returns {Promise<void>} JSON response with update result
- * 
+ *
  * @example
  * // PUT /api/loans/:loanId/status
  * {
  *   "status": "approved",
  *   "comments": "Loan approved after thorough review"
  * }
- * 
+ *
  * @example
  * // Success Response (200)
  * {
@@ -1178,34 +1278,35 @@ exports.updateLoanStatus = async (req, res) => {
     const { status, comments, reason } = req.body;
     const user = req.user;
 
-    logger.info('Updating loan status', {
+    logger.info("Updating loan status", {
       loanId,
       userId: user.userId,
-      newStatus: status
+      newStatus: status,
     });
 
     const loan = await Loan.findOne({
-      $or: [
-        { loanApplicationId: loanId },
-        { _id: loanId }
-      ]
-    }).populate('clientUserId');
+      $or: [{ loanApplicationId: loanId }, { _id: loanId }],
+    }).populate("clientUserId");
 
     if (!loan) {
-      throw new AppError('Loan not found', 404, 'LOAN_NOT_FOUND');
+      throw new AppError("Loan not found", 404, "LOAN_NOT_FOUND");
     }
 
     // Validate status update
-    const validation = await validateLoanStatusUpdate(loan._id, status.toLowerCase(), user);
+    const validation = await validateLoanStatusUpdate(
+      loan._id,
+      status.toLowerCase(),
+      user
+    );
     if (!validation.isValid) {
       return res.status(400).json({
         success: false,
         error: {
-          code: 'BUSINESS_RULE_VIOLATION',
-          message: 'Loan status update violates business rules',
+          code: "BUSINESS_RULE_VIOLATION",
+          message: "Loan status update violates business rules",
           details: validation.errors,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
 
@@ -1213,27 +1314,29 @@ exports.updateLoanStatus = async (req, res) => {
     loan.loanStatus = status.toLowerCase();
 
     // Update calculated fields based on new status
-    if (status.toLowerCase() === 'active') {
-      loan.calculatedFields.nextPaymentDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    if (status.toLowerCase() === "active") {
+      loan.calculatedFields.nextPaymentDate = new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      );
       loan.disbursementDate = new Date();
-    } else if (status.toLowerCase() === 'completed') {
+    } else if (status.toLowerCase() === "completed") {
       loan.calculatedFields.remainingBalance = 0;
       loan.completionDate = new Date();
     }
 
     // Add audit trail entry
     loan.auditTrail.push({
-      action: 'status_updated',
+      action: "status_updated",
       performedBy: user.userId,
       timestamp: new Date(),
       changes: {
         oldStatus,
         newStatus: status.toLowerCase(),
-        reason
+        reason,
       },
       ipAddress: req.ip,
-      userAgent: req.get('User-Agent'),
-      comments
+      userAgent: req.get("User-Agent"),
+      comments,
     });
 
     await loan.save();
@@ -1244,48 +1347,56 @@ exports.updateLoanStatus = async (req, res) => {
       if (client && client.personalInfo.email) {
         const statusChange = {
           newStatus: status.toLowerCase(),
-          approvalMessage: status.toLowerCase() === 'approved' ? comments : null,
-          rejectionReason: status.toLowerCase() === 'rejected' ? reason : null,
+          approvalMessage:
+            status.toLowerCase() === "approved" ? comments : null,
+          rejectionReason: status.toLowerCase() === "rejected" ? reason : null,
         };
 
-        await emailService.sendLoanStatusChangeNotification(loan, client, statusChange);
+        await emailService.sendLoanStatusChangeNotification(
+          loan,
+          client,
+          statusChange
+        );
 
-        logger.info('Email notification queued for loan status change', {
+        logger.info("Email notification queued for loan status change", {
           loanId: loan._id,
           clientEmail: client.personalInfo.email,
-          newStatus: status.toLowerCase()
+          newStatus: status.toLowerCase(),
         });
       }
     } catch (emailError) {
       // Log email error but don't fail the status update
-      logger.error('Failed to send email notification for loan status change', emailError, {
-        loanId: loan._id,
-        newStatus: status.toLowerCase()
-      });
+      logger.error(
+        "Failed to send email notification for loan status change",
+        emailError,
+        {
+          loanId: loan._id,
+          newStatus: status.toLowerCase(),
+        }
+      );
     }
 
-    logger.info('Loan status updated successfully', {
+    logger.info("Loan status updated successfully", {
       loanId: loan._id,
       oldStatus,
       newStatus: status.toLowerCase(),
-      userId: user.userId
+      userId: user.userId,
     });
 
     res.json({
       success: true,
-      message: 'Loan status updated successfully',
+      message: "Loan status updated successfully",
       data: {
         loan,
         oldStatus,
-        newStatus: status.toLowerCase()
+        newStatus: status.toLowerCase(),
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error updating loan status', error, {
+    logger.error("Error updating loan status", error, {
       loanId: req.params.loanId,
-      userId: req.user?.userId
+      userId: req.user?.userId,
     });
 
     if (error instanceof AppError) {
@@ -1294,18 +1405,18 @@ exports.updateLoanStatus = async (req, res) => {
         error: {
           code: error.errorCode,
           message: error.message,
-          timestamp: new Date().toISOString()
-        }
+          timestamp: new Date().toISOString(),
+        },
       });
     }
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error updating loan status',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error updating loan status",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -1318,29 +1429,31 @@ exports.addPayment = async (req, res) => {
 
     const loan = await Loan.findOne({ loanApplicationId: loanId });
     if (!loan) {
-      return res.status(404).json({ message: 'Loan not found' });
+      return res.status(404).json({ message: "Loan not found" });
     }
 
     // Generate payment ID
-    const paymentId = `P${loanId}${String(loan.paymentHistory.length + 1).padStart(3, '0')}`;
+    const paymentId = `P${loanId}${String(
+      loan.paymentHistory.length + 1
+    ).padStart(3, "0")}`;
 
     const payment = {
       paymentId,
       ...paymentData,
-      status: 'Pending'
+      status: "Pending",
     };
 
     loan.paymentHistory.push(payment);
     await loan.save();
 
     res.json({
-      message: 'Payment added successfully',
-      payment
+      message: "Payment added successfully",
+      payment,
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Error adding payment',
-      error: error.message
+      message: "Error adding payment",
+      error: error.message,
     });
   }
 };
@@ -1350,26 +1463,28 @@ exports.getPaymentHistory = async (req, res) => {
   try {
     const { loanId } = req.params;
 
-    const loan = await Loan.findOne({ loanApplicationId: loanId })
-      .populate('paymentHistory.approvedBy', 'name email');
+    const loan = await Loan.findOne({ loanApplicationId: loanId }).populate(
+      "paymentHistory.approvedBy",
+      "name email"
+    );
 
     if (!loan) {
-      return res.status(404).json({ message: 'Loan not found' });
+      return res.status(404).json({ message: "Loan not found" });
     }
 
     res.json({
-      message: 'Payment history fetched successfully',
+      message: "Payment history fetched successfully",
       payments: loan.paymentHistory,
       loanInfo: {
         loanApplicationId: loan.loanApplicationId,
         monthlyInstallment: loan.monthlyInstallment,
-        totalPayableAmount: loan.totalPayableAmount
-      }
+        totalPayableAmount: loan.totalPayableAmount,
+      },
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Error fetching payment history',
-      error: error.message
+      message: "Error fetching payment history",
+      error: error.message,
     });
   }
 };
@@ -1381,30 +1496,30 @@ exports.searchLoans = async (req, res) => {
 
     // Find clients assigned to this agent
     const agentClients = await Client.find({ assignedReviewer: agentId });
-    const clientIds = agentClients.map(client => client._id);
+    const clientIds = agentClients.map((client) => client._id);
 
     const searchQuery = {
       clientUserId: { $in: clientIds },
       $or: [
-        { loanApplicationId: { $regex: query, $options: 'i' } },
-        { product: { $regex: query, $options: 'i' } },
-        { purpose: { $regex: query, $options: 'i' } }
-      ]
+        { loanApplicationId: { $regex: query, $options: "i" } },
+        { product: { $regex: query, $options: "i" } },
+        { purpose: { $regex: query, $options: "i" } },
+      ],
     };
 
     const loans = await Loan.find(searchQuery)
-      .populate('clientUserId', 'personalInfo registrationId')
+      .populate("clientUserId", "personalInfo registrationId")
       .sort({ createdAt: -1 })
       .limit(20);
 
     res.json({
-      message: 'Search results fetched successfully',
-      loans
+      message: "Search results fetched successfully",
+      loans,
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Error searching loans',
-      error: error.message
+      message: "Error searching loans",
+      error: error.message,
     });
   }
 };
@@ -1420,36 +1535,40 @@ exports.getAllLoans = async (req, res) => {
     }
 
     const loans = await Loan.find(query)
-      .populate('clientUserId', 'personalInfo registrationId')
-      .populate('agentReview.reviewedBy', 'name email')
-      .populate('regionalAdminApproval.approvedBy', 'name email')
+      .populate("clientUserId", "personalInfo registrationId")
+      .populate("agentReview.reviewedBy", "name email")
+      .populate("regionalAdminApproval.approvedBy", "name email")
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
       .limit(parseInt(limit));
 
     // Transform to match frontend interface
-    const transformedLoans = loans.map(loan => ({
+    const transformedLoans = loans.map((loan) => ({
       id: loan._id.toString(),
-      borrowerName: loan.clientUserId?.personalInfo?.fullName || 'Unknown',
+      borrowerName: loan.clientUserId?.personalInfo?.fullName || "Unknown",
       amount: loan.loanAmount,
-      status: loan.loanStatus.toLowerCase().replace(' ', '_'),
-      assignedAgentId: loan.agentReview?.reviewedBy?.toString() || '',
+      status: loan.loanStatus.toLowerCase().replace(" ", "_"),
+      assignedAgentId: loan.agentReview?.reviewedBy?.toString() || "",
       createdAt: loan.createdAt,
       updatedAt: loan.updatedAt,
       interestRate: loan.interestRate,
-      totalPaid: loan.paymentHistory?.reduce((sum, payment) =>
-        payment.status === 'Approved' ? sum + payment.amount : sum, 0) || 0,
+      totalPaid:
+        loan.paymentHistory?.reduce(
+          (sum, payment) =>
+            payment.status === "Approved" ? sum + payment.amount : sum,
+          0
+        ) || 0,
       termMonths: loan.loanTerm,
       monthlyPayment: loan.monthlyInstallment,
-      disbursedDate: loan.loanStatus === 'Active' ? loan.updatedAt : null,
-      completedDate: loan.loanStatus === 'Completed' ? loan.updatedAt : null
+      disbursedDate: loan.loanStatus === "Active" ? loan.updatedAt : null,
+      completedDate: loan.loanStatus === "Completed" ? loan.updatedAt : null,
     }));
 
     res.json(transformedLoans);
   } catch (error) {
     res.status(500).json({
-      message: 'Error fetching all loans',
-      error: error.message
+      message: "Error fetching all loans",
+      error: error.message,
     });
   }
 };
@@ -1459,41 +1578,41 @@ exports.getRegionalManagerLoans = async (req, res) => {
   try {
     const { regionalManagerId } = req.params;
     const {
-      status = 'pending_approval',
+      status = "pending_approval",
       page = 1,
       limit = 10,
-      search = '',
-      sortBy = 'agentReview.reviewDate',
-      sortOrder = 'asc' // Oldest first for FIFO processing
+      search = "",
+      sortBy = "agentReview.reviewDate",
+      sortOrder = "asc", // Oldest first for FIFO processing
     } = req.query;
 
     const loanRepository = new LoanRepository();
 
-    logger.debug('Getting regional manager loans', {
+    logger.debug("Getting regional manager loans", {
       regionalManagerId,
-      status
+      status,
     });
 
     let filters = { assignedRegionalManager: regionalManagerId };
 
     // Filter based on status
-    if (status === 'pending_approval') {
-      filters['agentReview.status'] = 'approved';
-      filters['regionalAdminApproval.status'] = { $in: ['pending', null] };
-    } else if (status === 'approved') {
-      filters['regionalAdminApproval.status'] = 'approved';
-    } else if (status === 'rejected') {
-      filters['regionalAdminApproval.status'] = 'rejected';
+    if (status === "pending_approval") {
+      filters["agentReview.status"] = "approved";
+      filters["regionalAdminApproval.status"] = { $in: ["pending", null] };
+    } else if (status === "approved") {
+      filters["regionalAdminApproval.status"] = "approved";
+    } else if (status === "rejected") {
+      filters["regionalAdminApproval.status"] = "rejected";
     }
 
     // Handle search
     if (search) {
-      const searchRegex = { $regex: search, $options: 'i' };
+      const searchRegex = { $regex: search, $options: "i" };
       filters.$or = [
         { loanApplicationId: searchRegex },
         { product: searchRegex },
         { purpose: searchRegex },
-        { searchableText: searchRegex }
+        { searchableText: searchRegex },
       ];
     }
 
@@ -1501,21 +1620,28 @@ exports.getRegionalManagerLoans = async (req, res) => {
       page: parseInt(page),
       limit: parseInt(limit),
       populate: [
-        { path: 'clientUserId', select: 'personalInfo registrationId status verificationStatus' },
-        { path: 'assignedAgent', select: 'personalInfo role' },
-        { path: 'agentReview.reviewedBy', select: 'personalInfo' }
+        {
+          path: "clientUserId",
+          select: "personalInfo registrationId status verificationStatus",
+        },
+        { path: "assignedAgent", select: "personalInfo role" },
+        { path: "agentReview.reviewedBy", select: "personalInfo" },
       ],
-      sort: { [sortBy]: sortOrder === 'desc' ? -1 : 1 }
+      sort: { [sortBy]: sortOrder === "desc" ? -1 : 1 },
     };
 
-    const result = await loanRepository.findForRegionalApproval(regionalManagerId, filters, options);
+    const result = await loanRepository.findForRegionalApproval(
+      regionalManagerId,
+      filters,
+      options
+    );
     const loans = result.docs || result;
 
     // Transform for frontend
-    const transformedLoans = loans.map(loan => ({
+    const transformedLoans = loans.map((loan) => ({
       id: loan._id.toString(),
       loanApplicationId: loan.loanApplicationId,
-      borrowerName: loan.clientUserId?.personalInfo?.fullName || 'Unknown',
+      borrowerName: loan.clientUserId?.personalInfo?.fullName || "Unknown",
       borrowerId: loan.clientUserId?._id?.toString(),
       amount: loan.loanAmount,
       monthlyPayment: loan.monthlyInstallment,
@@ -1534,8 +1660,8 @@ exports.getRegionalManagerLoans = async (req, res) => {
         rating: loan.agentReview?.rating,
         reviewedBy: {
           name: `${loan.agentReview?.reviewedBy?.personalInfo?.firstName} ${loan.agentReview?.reviewedBy?.personalInfo?.lastName}`,
-          email: loan.agentReview?.reviewedBy?.personalInfo?.email
-        }
+          email: loan.agentReview?.reviewedBy?.personalInfo?.email,
+        },
       },
 
       // Client information
@@ -1544,17 +1670,17 @@ exports.getRegionalManagerLoans = async (req, res) => {
         email: loan.clientUserId?.personalInfo?.email,
         phone: loan.clientUserId?.personalInfo?.phone,
         status: loan.clientUserId?.status,
-        verificationStatus: loan.clientUserId?.verificationStatus
+        verificationStatus: loan.clientUserId?.verificationStatus,
       },
 
       // Assigned agent
       assignedAgent: {
         name: `${loan.assignedAgent?.personalInfo?.firstName} ${loan.assignedAgent?.personalInfo?.lastName}`,
-        email: loan.assignedAgent?.personalInfo?.email
+        email: loan.assignedAgent?.personalInfo?.email,
       },
 
       createdAt: loan.createdAt,
-      updatedAt: loan.updatedAt
+      updatedAt: loan.updatedAt,
     }));
 
     res.json({
@@ -1564,25 +1690,26 @@ exports.getRegionalManagerLoans = async (req, res) => {
         pagination: {
           total: result.totalDocs || loans.length,
           page: parseInt(page),
-          pages: Math.ceil((result.totalDocs || loans.length) / parseInt(limit)),
-          limit: parseInt(limit)
-        }
+          pages: Math.ceil(
+            (result.totalDocs || loans.length) / parseInt(limit)
+          ),
+          limit: parseInt(limit),
+        },
       },
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error fetching regional manager loans', error, {
-      regionalManagerId: req.params.regionalManagerId
+    logger.error("Error fetching regional manager loans", error, {
+      regionalManagerId: req.params.regionalManagerId,
     });
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error fetching loans for approval',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error fetching loans for approval",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -1594,13 +1721,14 @@ exports.getRegionalManagerStats = async (req, res) => {
     const { startDate, endDate } = req.query;
     const loanRepository = new LoanRepository();
 
-    logger.debug('Getting regional manager statistics', {
+    logger.debug("Getting regional manager statistics", {
       regionalManagerId,
       startDate,
-      endDate
+      endDate,
     });
 
-    const dashboardStats = await loanRepository.getRegionalManagerDashboardStats(regionalManagerId);
+    const dashboardStats =
+      await loanRepository.getRegionalManagerDashboardStats(regionalManagerId);
 
     // Get regional statistics
     const user = await Staff.findById(regionalManagerId);
@@ -1611,7 +1739,10 @@ exports.getRegionalManagerStats = async (req, res) => {
       if (startDate) dateRange.startDate = startDate;
       if (endDate) dateRange.endDate = endDate;
 
-      regionalStats = await loanRepository.getRegionalStatistics(user.region, dateRange);
+      regionalStats = await loanRepository.getRegionalStatistics(
+        user.region,
+        dateRange
+      );
     }
 
     // Format response
@@ -1620,19 +1751,21 @@ exports.getRegionalManagerStats = async (req, res) => {
       pendingApprovals: dashboardStats.pendingApprovals?.[0]?.count || 0,
 
       // Status breakdown
-      statusStats: dashboardStats.statusStats?.reduce((acc, item) => {
-        acc[item._id] = {
-          count: item.count,
-          totalAmount: item.totalAmount
-        };
-        return acc;
-      }, {}) || {},
+      statusStats:
+        dashboardStats.statusStats?.reduce((acc, item) => {
+          acc[item._id] = {
+            count: item.count,
+            totalAmount: item.totalAmount,
+          };
+          return acc;
+        }, {}) || {},
 
       // Workflow breakdown
-      workflowStats: dashboardStats.workflowStats?.reduce((acc, item) => {
-        acc[item._id] = item.count;
-        return acc;
-      }, {}) || {},
+      workflowStats:
+        dashboardStats.workflowStats?.reduce((acc, item) => {
+          acc[item._id] = item.count;
+          return acc;
+        }, {}) || {},
 
       // Monthly trends
       monthlyTrends: dashboardStats.monthlyTrends || [],
@@ -1643,28 +1776,27 @@ exports.getRegionalManagerStats = async (req, res) => {
         totalAmount: regionalStats.totalAmount || 0,
         averageAmount: regionalStats.averageAmount || 0,
         statusCounts: regionalStats.statusCounts || {},
-        workflowStageCounts: regionalStats.workflowStageCounts || {}
-      }
+        workflowStageCounts: regionalStats.workflowStageCounts || {},
+      },
     };
 
     res.json({
       success: true,
       data: stats,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error fetching regional manager statistics', error, {
-      regionalManagerId: req.params.regionalManagerId
+    logger.error("Error fetching regional manager statistics", error, {
+      regionalManagerId: req.params.regionalManagerId,
     });
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error fetching dashboard statistics',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error fetching dashboard statistics",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -1675,29 +1807,35 @@ exports.getLoanStats = async (req, res) => {
     const { regionId, agentId, startDate, endDate } = req.query;
     const user = req.user;
 
-    logger.debug('Getting loan statistics', {
+    logger.debug("Getting loan statistics", {
       regionId,
       agentId,
       startDate,
       endDate,
-      userRole: user?.role
+      userRole: user?.role,
     });
 
     // Build base filters based on user role
     let baseFilters = {};
 
-    if (user?.role === 'regional_manager' && user.region) {
+    if (user?.role === "regional_manager" && user.region) {
       baseFilters.region = user.region;
-    } else if (user?.role === 'agent') {
+    } else if (user?.role === "agent") {
       baseFilters.assignedAgent = user.userId;
     }
 
     // Apply additional filters
-    if (regionId && ['moderate_admin', 'super_admin', 'ceo'].includes(user?.role)) {
+    if (
+      regionId &&
+      ["moderate_admin", "super_admin", "ceo"].includes(user?.role)
+    ) {
       baseFilters.region = regionId;
     }
 
-    if (agentId && ['regional_manager', 'moderate_admin', 'super_admin'].includes(user?.role)) {
+    if (
+      agentId &&
+      ["regional_manager", "moderate_admin", "super_admin"].includes(user?.role)
+    ) {
       baseFilters.assignedAgent = agentId;
     }
 
@@ -1719,32 +1857,32 @@ exports.getLoanStats = async (req, res) => {
               $group: {
                 _id: null,
                 totalLoans: { $sum: 1 },
-                totalAmount: { $sum: '$loanAmount' },
-                averageAmount: { $avg: '$loanAmount' },
-                averageInterestRate: { $avg: '$interestRate' }
-              }
-            }
+                totalAmount: { $sum: "$loanAmount" },
+                averageAmount: { $avg: "$loanAmount" },
+                averageInterestRate: { $avg: "$interestRate" },
+              },
+            },
           ],
 
           // Status breakdown
           statusStats: [
             {
               $group: {
-                _id: '$loanStatus',
+                _id: "$loanStatus",
                 count: { $sum: 1 },
-                totalAmount: { $sum: '$loanAmount' }
-              }
-            }
+                totalAmount: { $sum: "$loanAmount" },
+              },
+            },
           ],
 
           // Workflow stage breakdown
           workflowStats: [
             {
               $group: {
-                _id: '$workflowState.currentStage',
-                count: { $sum: 1 }
-              }
-            }
+                _id: "$workflowState.currentStage",
+                count: { $sum: 1 },
+              },
+            },
           ],
 
           // Financial calculations
@@ -1755,59 +1893,69 @@ exports.getLoanStats = async (req, res) => {
                 totalDisbursed: {
                   $sum: {
                     $cond: [
-                      { $in: ['$loanStatus', ['approved', 'active', 'completed']] },
-                      '$loanAmount',
-                      0
-                    ]
-                  }
+                      {
+                        $in: [
+                          "$loanStatus",
+                          ["approved", "active", "completed"],
+                        ],
+                      },
+                      "$loanAmount",
+                      0,
+                    ],
+                  },
                 },
                 totalCompleted: {
                   $sum: {
                     $cond: [
-                      { $eq: ['$loanStatus', 'completed'] },
-                      '$loanAmount',
-                      0
-                    ]
-                  }
-                }
-              }
-            }
+                      { $eq: ["$loanStatus", "completed"] },
+                      "$loanAmount",
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
           ],
 
           // Payment statistics
           paymentStats: [
-            { $unwind: { path: '$paymentHistory', preserveNullAndEmptyArrays: true } },
+            {
+              $unwind: {
+                path: "$paymentHistory",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
             {
               $match: {
-                'paymentHistory.status': 'approved'
-              }
+                "paymentHistory.status": "approved",
+              },
             },
             {
               $group: {
                 _id: null,
-                totalCollected: { $sum: '$paymentHistory.amount' }
-              }
-            }
+                totalCollected: { $sum: "$paymentHistory.amount" },
+              },
+            },
           ],
 
           // Overdue analysis
           overdueStats: [
             {
               $match: {
-                'calculatedFields.daysOverdue': { $gt: 0 }
-              }
+                "calculatedFields.daysOverdue": { $gt: 0 },
+              },
             },
             {
               $group: {
                 _id: null,
                 overdueCount: { $sum: 1 },
-                overdueAmount: { $sum: '$loanAmount' },
-                averageOverdueDays: { $avg: '$calculatedFields.daysOverdue' }
-              }
-            }
-          ]
-        }
-      }
+                overdueAmount: { $sum: "$loanAmount" },
+                averageOverdueDays: { $avg: "$calculatedFields.daysOverdue" },
+              },
+            },
+          ],
+        },
+      },
     ]);
 
     const result = stats[0] || {};
@@ -1818,35 +1966,44 @@ exports.getLoanStats = async (req, res) => {
 
     // Format status counts
     const statusCounts = {};
-    result.statusStats?.forEach(item => {
+    result.statusStats?.forEach((item) => {
       statusCounts[item._id] = {
         count: item.count,
-        totalAmount: item.totalAmount
+        totalAmount: item.totalAmount,
       };
     });
 
     // Format workflow counts
     const workflowCounts = {};
-    result.workflowStats?.forEach(item => {
+    result.workflowStats?.forEach((item) => {
       workflowCounts[item._id] = item.count;
     });
 
     // Calculate derived metrics
     const totalLoans = basicStats.totalLoans || 0;
-    const defaultRate = totalLoans > 0 ? ((overdueStats.overdueCount || 0) / totalLoans) * 100 : 0;
-    const collectionRate = financialStats.totalDisbursed > 0 ?
-      ((paymentStats.totalCollected || 0) / financialStats.totalDisbursed) * 100 : 0;
+    const defaultRate =
+      totalLoans > 0
+        ? ((overdueStats.overdueCount || 0) / totalLoans) * 100
+        : 0;
+    const collectionRate =
+      financialStats.totalDisbursed > 0
+        ? ((paymentStats.totalCollected || 0) / financialStats.totalDisbursed) *
+          100
+        : 0;
 
     const response = {
       // Basic statistics
       totalLoans,
       totalAmount: basicStats.totalAmount || 0,
       averageAmount: Math.round(basicStats.averageAmount || 0),
-      averageInterestRate: Math.round((basicStats.averageInterestRate || 0) * 100) / 100,
+      averageInterestRate:
+        Math.round((basicStats.averageInterestRate || 0) * 100) / 100,
 
       // Status counts (legacy compatibility)
       completeLoans: statusCounts.completed?.count || 0,
-      pendingLoans: (statusCounts.pending?.count || 0) + (statusCounts.under_review?.count || 0),
+      pendingLoans:
+        (statusCounts.pending?.count || 0) +
+        (statusCounts.under_review?.count || 0),
       overdueLoans: overdueStats.overdueCount || 0,
       pendingApplications: statusCounts.pending?.count || 0,
       approvedLoans: statusCounts.approved?.count || 0,
@@ -1871,35 +2028,34 @@ exports.getLoanStats = async (req, res) => {
       overdueAnalysis: {
         count: overdueStats.overdueCount || 0,
         totalAmount: overdueStats.overdueAmount || 0,
-        averageDays: Math.round(overdueStats.averageOverdueDays || 0)
-      }
+        averageDays: Math.round(overdueStats.averageOverdueDays || 0),
+      },
     };
 
-    logger.debug('Loan statistics calculated', {
+    logger.debug("Loan statistics calculated", {
       totalLoans: response.totalLoans,
-      filters: baseFilters
+      filters: baseFilters,
     });
 
     res.json({
       success: true,
       data: response,
       filters: baseFilters,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
-
   } catch (error) {
-    logger.error('Error fetching loan statistics', error, {
+    logger.error("Error fetching loan statistics", error, {
       query: req.query,
-      userId: req.user?.userId
+      userId: req.user?.userId,
     });
 
     res.status(500).json({
       success: false,
       error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'Error fetching loan statistics',
-        timestamp: new Date().toISOString()
-      }
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error fetching loan statistics",
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -1908,13 +2064,13 @@ exports.getLoanStats = async (req, res) => {
 exports.getLoanAgreements = async (req, res) => {
   try {
     const loans = await Loan.find({
-      loanStatus: { $in: ['Active', 'Completed'] },
-      agreementGenerated: true
+      loanStatus: { $in: ["Active", "Completed"] },
+      agreementGenerated: true,
     })
-      .populate('clientUserId', 'personalInfo registrationId')
+      .populate("clientUserId", "personalInfo registrationId")
       .sort({ createdAt: -1 });
 
-    const agreements = loans.map(loan => ({
+    const agreements = loans.map((loan) => ({
       id: loan._id.toString(),
       loanId: loan.loanApplicationId,
       borrowerId: loan.clientUserId._id.toString(),
@@ -1924,21 +2080,23 @@ exports.getLoanAgreements = async (req, res) => {
       termMonths: loan.loanTerm,
       monthlyPayment: loan.monthlyInstallment,
       startDate: loan.createdAt,
-      endDate: new Date(new Date(loan.createdAt).setMonth(
-        new Date(loan.createdAt).getMonth() + loan.loanTerm
-      )).toISOString(),
-      status: loan.loanStatus === 'Completed' ? 'completed' : 'active',
+      endDate: new Date(
+        new Date(loan.createdAt).setMonth(
+          new Date(loan.createdAt).getMonth() + loan.loanTerm
+        )
+      ).toISOString(),
+      status: loan.loanStatus === "Completed" ? "completed" : "active",
       signedDate: loan.agreementGeneratedDate,
       documentUrl: loan.agreementUrl,
       createdAt: loan.createdAt,
-      updatedAt: loan.updatedAt
+      updatedAt: loan.updatedAt,
     }));
 
     res.json(agreements);
   } catch (error) {
     res.status(500).json({
-      message: 'Error fetching loan agreements',
-      error: error.message
+      message: "Error fetching loan agreements",
+      error: error.message,
     });
   }
 };
@@ -1947,17 +2105,17 @@ exports.getLoanAgreements = async (req, res) => {
 exports.generateAgreement = async (req, res) => {
   try {
     // Delegate to the new agreement controller
-    const agreementController = require('./agreementController');
+    const agreementController = require("./agreementController");
     return agreementController.generateAgreement(req, res);
   } catch (error) {
     res.status(500).json({
       success: false,
       error: {
-        code: 'AGREEMENT_GENERATION_ERROR',
-        message: 'Error generating agreement',
+        code: "AGREEMENT_GENERATION_ERROR",
+        message: "Error generating agreement",
         details: error.message,
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   }
 };
@@ -1967,17 +2125,20 @@ exports.sendAgreement = async (req, res) => {
   try {
     const { agreementId } = req.params;
 
-    const loan = await Loan.findById(agreementId).populate('clientUserId', 'personalInfo');
+    const loan = await Loan.findById(agreementId).populate(
+      "clientUserId",
+      "personalInfo"
+    );
     if (!loan) {
-      return res.status(404).json({ message: 'Agreement not found' });
+      return res.status(404).json({ message: "Agreement not found" });
     }
 
     if (!loan.agreementGenerated) {
-      return res.status(400).json({ message: 'Agreement not generated yet' });
+      return res.status(400).json({ message: "Agreement not generated yet" });
     }
 
     // Update agreement status
-    loan.agreementStatus = 'Sent';
+    loan.agreementStatus = "Sent";
     loan.agreementSentDate = new Date();
 
     await loan.save();
@@ -1986,13 +2147,13 @@ exports.sendAgreement = async (req, res) => {
     // For now, we'll just update the status
 
     res.json({
-      message: 'Agreement sent to client successfully',
-      loan
+      message: "Agreement sent to client successfully",
+      loan,
     });
   } catch (error) {
     res.status(500).json({
-      message: 'Error sending agreement',
-      error: error.message
+      message: "Error sending agreement",
+      error: error.message,
     });
   }
 };
@@ -2002,13 +2163,16 @@ exports.downloadAgreement = async (req, res) => {
   try {
     const { agreementId } = req.params;
 
-    const loan = await Loan.findById(agreementId).populate('clientUserId', 'personalInfo');
+    const loan = await Loan.findById(agreementId).populate(
+      "clientUserId",
+      "personalInfo"
+    );
     if (!loan) {
-      return res.status(404).json({ message: 'Agreement not found' });
+      return res.status(404).json({ message: "Agreement not found" });
     }
 
     if (!loan.agreementGenerated) {
-      return res.status(400).json({ message: 'Agreement not generated yet' });
+      return res.status(400).json({ message: "Agreement not generated yet" });
     }
 
     // Generate agreement content as a readable text document
@@ -2029,18 +2193,18 @@ Address: No. 123, Galle Road, Colombo 03, Sri Lanka
 Phone: +94 11 234 5678
 Email: info@paysync.lk
 
-Borrower: ${client?.personalInfo?.fullName || 'N/A'}
-Email: ${client?.personalInfo?.email || 'N/A'}
-Registration ID: ${client?.registrationId || 'N/A'}
+Borrower: ${client?.personalInfo?.fullName || "N/A"}
+Email: ${client?.personalInfo?.email || "N/A"}
+Registration ID: ${client?.registrationId || "N/A"}
 
 LOAN DETAILS
 ============
-Principal Amount: Rs. ${loan.loanAmount?.toLocaleString() || 'N/A'}
+Principal Amount: Rs. ${loan.loanAmount?.toLocaleString() || "N/A"}
 Interest Rate: ${loan.interestRate}% per annum
 Loan Term: ${loan.loanTerm} months
-Monthly Installment: Rs. ${loan.monthlyInstallment?.toLocaleString() || 'N/A'}
-Total Payable Amount: Rs. ${loan.totalPayableAmount?.toLocaleString() || 'N/A'}
-Loan Purpose: ${loan.purpose || 'N/A'}
+Monthly Installment: Rs. ${loan.monthlyInstallment?.toLocaleString() || "N/A"}
+Total Payable Amount: Rs. ${loan.totalPayableAmount?.toLocaleString() || "N/A"}
+Loan Purpose: ${loan.purpose || "N/A"}
 
 TERMS AND CONDITIONS
 ===================
@@ -2066,7 +2230,7 @@ SIGNATURES
 ==========
 BORROWER:
 Signature: _________________________
-Name: ${client?.personalInfo?.fullName || 'N/A'}
+Name: ${client?.personalInfo?.fullName || "N/A"}
 Date: _____________________________
 
 LENDER REPRESENTATIVE:
@@ -2097,14 +2261,16 @@ END OF DOCUMENT
     `;
 
     // Return as a text file that can be easily opened and read
-    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="LoanAgreement_${loan.loanApplicationId}.txt"`);
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="LoanAgreement_${loan.loanApplicationId}.txt"`
+    );
     res.send(agreementContent);
-
   } catch (error) {
     res.status(500).json({
-      message: 'Error downloading agreement',
-      error: error.message
+      message: "Error downloading agreement",
+      error: error.message,
     });
   }
 };
@@ -2112,11 +2278,11 @@ END OF DOCUMENT
 // Helper function to generate unique loan application ID
 const generateLoanApplicationId = async () => {
   const year = new Date().getFullYear();
-  const month = String(new Date().getMonth() + 1).padStart(2, '0');
+  const month = String(new Date().getMonth() + 1).padStart(2, "0");
 
   // Find the latest loan for this month
   const latestLoan = await Loan.findOne({
-    loanApplicationId: { $regex: `^LA${year}${month}` }
+    loanApplicationId: { $regex: `^LA${year}${month}` },
   }).sort({ loanApplicationId: -1 });
 
   let sequence = 1;
@@ -2125,5 +2291,5 @@ const generateLoanApplicationId = async () => {
     sequence = lastSequence + 1;
   }
 
-  return `LA${year}${month}${String(sequence).padStart(4, '0')}`;
+  return `LA${year}${month}${String(sequence).padStart(4, "0")}`;
 };

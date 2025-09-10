@@ -194,7 +194,7 @@ app.get("/", (req, res) => {
 app.use("/health", healthRoutes);
 
 // API routes with specific security middleware
-app.use("/api/auth", authRateLimit, strictInputSanitizer, authRoutes);
+app.use("/api/auth", strictInputSanitizer, authRoutes);
 app.use("/clientsAPI", clientRoutes);
 app.use("/api/staff", strictInputSanitizer, staffRoutes);
 app.use("/api/loans", loanRoutes);

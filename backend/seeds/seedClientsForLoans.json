@@ -1,0 +1,182 @@
+[
+  {
+    "registrationId": "R1001",
+    "submissionDate": "2024-01-01T00:00:00.000Z",
+    "assignedReviewer": "68b73962256d7d99a03d8696",
+    "verifiedOverview": true,
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedBy": "moderateAdminId",
+    "assignedAt": "2024-01-01T00:00:00.000Z",
+    "personalInfo": {
+      "fullName": "Alice Johnson",
+      "contactNumber": "+94770000001",
+      "email": "alice.johnson@example.com",
+      "dateOfBirth": "1985-05-15T00:00:00.000Z",
+      "address": "123 Main Street, Colombo",
+      "district": "Colombo",
+      "verified": true
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "851234567V",
+      "idCardUrl": "https://example.com/id/alice.jpg",
+      "verified": true,
+      "verificationDate": "2024-01-01T00:00:00.000Z"
+    },
+    "employmentDetails": {
+      "employer": "ABC Company",
+      "jobRole": "Software Engineer",
+      "monthlyIncome": 150000,
+      "employmentDuration": "5 years",
+      "employmentLetterUrl": "https://example.com/employment/alice.pdf",
+      "verified": true,
+      "workAddress": "456 Business Park, Colombo"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/id/alice.jpg",
+      "employmentLetterUrl": "https://example.com/employment/alice.pdf",
+      "photoUrl": "https://example.com/photo/alice.jpg",
+      "paysheetUrl": "https://example.com/paysheet/alice.pdf",
+      "uploadedAt": "2024-01-01T00:00:00.000Z",
+      "verified": true
+    },
+    "riskProfile": {
+      "score": 75,
+      "factors": ["Stable employment", "Good credit history"],
+      "lastAssessed": "2024-01-01T00:00:00.000Z",
+      "assessedBy": "68b73962256d7d99a03d8696",
+      "riskLevel": "low",
+      "notes": "Low risk client with stable income"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "preferredLanguage": "english",
+      "contactTimePreference": "morning"
+    },
+    "agentNotes": "Excellent client with good repayment history",
+    "region": "regionId",
+    "status": "Approved",
+    "approvedAt": "2024-01-01T00:00:00.000Z",
+    "approvedBy": "moderateAdminId"
+  },
+  {
+    "registrationId": "R1002",
+    "submissionDate": "2024-01-02T00:00:00.000Z",
+    "assignedReviewer": "68b73962256d7d99a03d8696",
+    "verifiedOverview": true,
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedBy": "moderateAdminId",
+    "assignedAt": "2024-01-02T00:00:00.000Z",
+    "personalInfo": {
+      "fullName": "Bob Smith",
+      "contactNumber": "+94770000002",
+      "email": "bob.smith@example.com",
+      "dateOfBirth": "1990-08-22T00:00:00.000Z",
+      "address": "789 Oak Avenue, Kandy",
+      "district": "Kandy",
+      "verified": true
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "902345678V",
+      "idCardUrl": "https://example.com/id/bob.jpg",
+      "verified": true,
+      "verificationDate": "2024-01-02T00:00:00.000Z"
+    },
+    "employmentDetails": {
+      "employer": "XYZ Corporation",
+      "jobRole": "Marketing Manager",
+      "monthlyIncome": 120000,
+      "employmentDuration": "3 years",
+      "employmentLetterUrl": "https://example.com/employment/bob.pdf",
+      "verified": true,
+      "workAddress": "321 Corporate Plaza, Kandy"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/id/bob.jpg",
+      "employmentLetterUrl": "https://example.com/employment/bob.pdf",
+      "photoUrl": "https://example.com/photo/bob.jpg",
+      "paysheetUrl": "https://example.com/paysheet/bob.pdf",
+      "uploadedAt": "2024-01-02T00:00:00.000Z",
+      "verified": true
+    },
+    "riskProfile": {
+      "score": 65,
+      "factors": ["Good employment", "Average credit history"],
+      "lastAssessed": "2024-01-02T00:00:00.000Z",
+      "assessedBy": "68b73962256d7d99a03d8696",
+      "riskLevel": "medium",
+      "notes": "Medium risk client, requires monitoring"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": false,
+      "preferredLanguage": "english",
+      "contactTimePreference": "afternoon"
+    },
+    "agentNotes": "Good client, needs some guidance",
+    "region": "regionId",
+    "status": "Approved",
+    "approvedAt": "2024-01-02T00:00:00.000Z",
+    "approvedBy": "moderateAdminId"
+  },
+  {
+    "registrationId": "R1003",
+    "submissionDate": "2024-01-03T00:00:00.000Z",
+    "assignedReviewer": "68b73962256d7d99a03d8696",
+    "verifiedOverview": false,
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedBy": "moderateAdminId",
+    "assignedAt": "2024-01-03T00:00:00.000Z",
+    "personalInfo": {
+      "fullName": "Charlie Davis",
+      "contactNumber": "+94770000003",
+      "email": "charlie.davis@example.com",
+      "dateOfBirth": "1982-12-10T00:00:00.000Z",
+      "address": "555 Pine Road, Galle",
+      "district": "Galle",
+      "verified": false
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "824567890V",
+      "idCardUrl": "https://example.com/id/charlie.jpg",
+      "verified": false
+    },
+    "employmentDetails": {
+      "employer": "Small Business Ltd",
+      "jobRole": "Owner",
+      "monthlyIncome": 80000,
+      "employmentDuration": "2 years",
+      "employmentLetterUrl": "https://example.com/employment/charlie.pdf",
+      "verified": false,
+      "workAddress": "777 Business Center, Galle"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/id/charlie.jpg",
+      "employmentLetterUrl": "https://example.com/employment/charlie.pdf",
+      "photoUrl": "https://example.com/photo/charlie.jpg",
+      "paysheetUrl": "https://example.com/paysheet/charlie.pdf",
+      "uploadedAt": "2024-01-03T00:00:00.000Z",
+      "verified": false
+    },
+    "riskProfile": {
+      "score": 45,
+      "factors": ["New business", "Limited credit history"],
+      "lastAssessed": "2024-01-03T00:00:00.000Z",
+      "assessedBy": "68b73962256d7d99a03d8696",
+      "riskLevel": "high",
+      "notes": "High risk client, additional verification needed"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "preferredLanguage": "english",
+      "contactTimePreference": "evening"
+    },
+    "agentNotes": "New client, requires additional verification",
+    "region": "regionId",
+    "status": "Pending"
+  }
+]

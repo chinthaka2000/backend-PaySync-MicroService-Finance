@@ -521,7 +521,7 @@ router.post(
       // Check for existing pending loans
       const existingLoan = await require("../models/Loan").findOne({
         clientUserId: client._id,
-        loanStatus: { $in: ["pending", "under_review"] },
+        loanStatus: { $in: ["Pending", "Under Review"] },
       });
 
       if (existingLoan) {
@@ -549,7 +549,7 @@ router.post(
         interestRate,
         collateral,
         guarantor,
-        loanStatus: "pending",
+        loanStatus: "Pending",
         applicationDate: new Date(),
         assignedReviewer: client.assignedReviewer,
       });

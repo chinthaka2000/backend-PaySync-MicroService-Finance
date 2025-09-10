@@ -70,6 +70,33 @@ const generalRateLimit = rateLimit({
   }
 });
 
+// Higher rate limit for agent endpoints (loans, dashboard, stats)
+const agentRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // Allow 500 requests per 15 minutes for agent endpoints
+  message: {
+    error: 'Too many agent requests from this IP, please try again later.',
+    retryAfter: 900
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (req, res) => {
+    logger.warn('Agent rate limit exceeded', {
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+      endpoint: req.path
+    });
+    res.status(429).json({
+      success: false,
+      error: {
+        code: 'AGENT_RATE_LIMIT_EXCEEDED',
+        message: 'Too many agent requests from this IP, please try again later.',
+        retryAfter: 900
+      }
+    });
+  }
+});
+
 // Strict rate limiting for authentication endpoints
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -245,6 +272,7 @@ const configureTrustProxy = (app) => {
 module.exports = {
   corsOptions,
   generalRateLimit,
+  agentRateLimit,
   authRateLimit,
   fileUploadRateLimit,
   securityHeaders,
