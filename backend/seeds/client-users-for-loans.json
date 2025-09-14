@@ -1,0 +1,52 @@
+[
+  {
+    "clientId": "507f1f77bcf86cd799439011",
+    "username": "alice.johnson@example.com",
+    "email": "alice.johnson@example.com",
+    "password": "$2b$10$hashedpasswordhere",
+    "role": "client",
+    "status": "Active",
+    "verifiedBy": "68b73962256d7d99a03d8696",
+    "lastLogin": "2024-01-28T10:00:00.000Z"
+  },
+  {
+    "clientId": "507f1f77bcf86cd799439012",
+    "username": "bob.smith@example.com",
+    "email": "bob.smith@example.com",
+    "password": "$2b$10$hashedpasswordhere",
+    "role": "client",
+    "status": "Active",
+    "verifiedBy": "68b73962256d7d99a03d8696",
+    "lastLogin": "2024-01-25T13:00:00.000Z"
+  },
+  {
+    "clientId": "507f1f77bcf86cd799439013",
+    "username": "charlie.davis@example.com",
+    "email": "charlie.davis@example.com",
+    "password": "$2b$10$hashedpasswordhere",
+    "role": "client",
+    "status": "Active",
+    "verifiedBy": "68b73962256d7d99a03d8696",
+    "lastLogin": "2024-01-20T08:00:00.000Z"
+  },
+  {
+    "clientId": "507f1f77bcf86cd799439014",
+    "username": "david.wilson@example.com",
+    "email": "david.wilson@example.com",
+    "password": "$2b$10$hashedpasswordhere",
+    "role": "client",
+    "status": "Active",
+    "verifiedBy": "68b73962256d7d99a03d8696",
+    "lastLogin": "2024-01-10T09:00:00.000Z"
+  },
+  {
+    "clientId": "507f1f77bcf86cd799439015",
+    "username": "emma.thompson@example.com",
+    "email": "emma.thompson@example.com",
+    "password": "$2b$10$hashedpasswordhere",
+    "role": "client",
+    "status": "Active",
+    "verifiedBy": "68b73962256d7d99a03d8696",
+    "lastLogin": "2024-01-05T08:00:00.000Z"
+  }
+]

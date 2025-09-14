@@ -1,0 +1,786 @@
+[
+  {
+    "_id": {
+      "$oid": "68b73962256d7d99a03d8705"
+    },
+    "registrationId": "CLT001001",
+    "submissionDate": "2024-01-05T08:00:00.000Z",
+    "lastUpdated": "2024-01-15T10:00:00.000Z",
+    "assignedReviewer": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "verifiedOverview": true,
+    "assignedAgent": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedBy": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedAt": "2024-01-05T08:00:00.000Z",
+    "personalInfo": {
+      "fullName": "Emma Thompson",
+      "contactNumber": "+94770000001",
+      "email": "emma.thompson@example.com",
+      "dateOfBirth": "1985-03-15T00:00:00.000Z",
+      "address": "456 Garden Lane, Colombo 05",
+      "district": "Colombo",
+      "verified": true
+    },
+    "verificationStatus": {
+      "identity": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-08T10:00:00.000Z",
+        "documents": [
+          {
+            "type": "NIC",
+            "url": "https://example.com/nic-emma-thompson.jpg",
+            "uploadedAt": "2024-01-05T08:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "employment": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-08T10:00:00.000Z",
+        "documents": [
+          {
+            "type": "paysheet",
+            "url": "https://example.com/paysheet-emma-thompson.pdf",
+            "uploadedAt": "2024-01-05T08:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "income": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-08T10:00:00.000Z",
+        "monthlyIncomeVerified": 150000,
+        "documents": [
+          {
+            "type": "bank_statement",
+            "url": "https://example.com/bank-statement-emma-thompson.pdf",
+            "uploadedAt": "2024-01-05T08:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "documents": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-08T10:00:00.000Z",
+        "completionPercentage": 100
+      }
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "851234567V",
+      "idCardUrl": "https://example.com/nic-emma-thompson.jpg",
+      "verified": true,
+      "verificationDate": "2024-01-08T10:00:00.000Z"
+    },
+    "employmentDetails": {
+      "employer": "ABC Corporation",
+      "jobRole": "Senior Manager",
+      "monthlyIncome": 150000,
+      "employmentDuration": "5 years",
+      "employmentLetterUrl": "https://example.com/employment-letter-emma-thompson.pdf",
+      "verified": true,
+      "workAddress": "123 Business Park, Colombo"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/nic-emma-thompson.jpg",
+      "employmentLetterUrl": "https://example.com/employment-letter-emma-thompson.pdf",
+      "photoUrl": "https://example.com/photo-emma-thompson.jpg",
+      "paysheetUrl": "https://example.com/paysheet-emma-thompson.pdf",
+      "uploadedAt": "2024-01-05T08:00:00.000Z",
+      "verified": true
+    },
+    "riskProfile": {
+      "score": 85,
+      "factors": ["Stable employment", "Good credit history", "Regular income"],
+      "lastAssessed": "2024-01-08T10:00:00.000Z",
+      "assessedBy": {
+        "$oid": "68b73962256d7d99a03d8696"
+      },
+      "riskLevel": "low",
+      "notes": "Low risk client with stable employment and good financial history"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "preferredLanguage": "english",
+      "contactTimePreference": "evening"
+    },
+    "region": {
+      "$oid": "68be8db25b5b65b07a029e5a"
+    },
+    "status": "Approved",
+    "statusHistory": [
+      {
+        "status": "Pending",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-05T08:00:00.000Z",
+        "reason": "Initial application"
+      },
+      {
+        "status": "Approved",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-15T10:00:00.000Z",
+        "reason": "All verifications completed successfully"
+      }
+    ],
+    "approvedAt": "2024-01-15T10:00:00.000Z",
+    "approvedBy": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "auditTrail": [
+      {
+        "action": "created",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-05T08:00:00.000Z"
+      },
+      {
+        "action": "verified",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-08T10:00:00.000Z"
+      }
+    ],
+    "searchableText": "CLT001001 Emma Thompson emma.thompson@example.com +94770000001 851234567V ABC Corporation Senior Manager Approved",
+    "createdAt": "2024-01-05T08:00:00.000Z",
+    "updatedAt": "2024-01-15T10:00:00.000Z",
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "68b73962256d7d99a03d8706"
+    },
+    "registrationId": "CLT001002",
+    "submissionDate": "2024-01-10T09:00:00.000Z",
+    "lastUpdated": "2024-01-20T11:00:00.000Z",
+    "assignedReviewer": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "verifiedOverview": true,
+    "assignedAgent": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedBy": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedAt": "2024-01-10T09:00:00.000Z",
+    "personalInfo": {
+      "fullName": "David Wilson",
+      "contactNumber": "+94770000002",
+      "email": "david.wilson@example.com",
+      "dateOfBirth": "1982-07-22T00:00:00.000Z",
+      "address": "321 Business Park, Colombo 03",
+      "district": "Colombo",
+      "verified": true
+    },
+    "verificationStatus": {
+      "identity": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-15T11:00:00.000Z",
+        "documents": [
+          {
+            "type": "NIC",
+            "url": "https://example.com/nic-david-wilson.jpg",
+            "uploadedAt": "2024-01-10T09:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "employment": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-15T11:00:00.000Z",
+        "documents": [
+          {
+            "type": "business_registration",
+            "url": "https://example.com/business-reg-david-wilson.pdf",
+            "uploadedAt": "2024-01-10T09:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "income": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-15T11:00:00.000Z",
+        "monthlyIncomeVerified": 200000,
+        "documents": [
+          {
+            "type": "financial_statement",
+            "url": "https://example.com/financial-statement-david-wilson.pdf",
+            "uploadedAt": "2024-01-10T09:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "documents": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-15T11:00:00.000Z",
+        "completionPercentage": 100
+      }
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "827654321V",
+      "idCardUrl": "https://example.com/nic-david-wilson.jpg",
+      "verified": true,
+      "verificationDate": "2024-01-15T11:00:00.000Z"
+    },
+    "employmentDetails": {
+      "employer": "Wilson Enterprises",
+      "jobRole": "Business Owner",
+      "monthlyIncome": 200000,
+      "employmentDuration": "8 years",
+      "employmentLetterUrl": "https://example.com/business-license-david-wilson.pdf",
+      "verified": true,
+      "workAddress": "321 Business Park, Colombo 03"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/nic-david-wilson.jpg",
+      "employmentLetterUrl": "https://example.com/business-license-david-wilson.pdf",
+      "photoUrl": "https://example.com/photo-david-wilson.jpg",
+      "paysheetUrl": "https://example.com/financial-statement-david-wilson.pdf",
+      "uploadedAt": "2024-01-10T09:00:00.000Z",
+      "verified": true
+    },
+    "riskProfile": {
+      "score": 78,
+      "factors": [
+        "Established business",
+        "Good financials",
+        "Consistent revenue"
+      ],
+      "lastAssessed": "2024-01-15T11:00:00.000Z",
+      "assessedBy": {
+        "$oid": "68b73962256d7d99a03d8696"
+      },
+      "riskLevel": "low",
+      "notes": "Established business owner with strong financial position"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "preferredLanguage": "english",
+      "contactTimePreference": "morning"
+    },
+    "region": {
+      "$oid": "68be8db25b5b65b07a029e5a"
+    },
+    "status": "Approved",
+    "statusHistory": [
+      {
+        "status": "Pending",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-10T09:00:00.000Z",
+        "reason": "Initial application"
+      },
+      {
+        "status": "Approved",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-20T11:00:00.000Z",
+        "reason": "Business verification completed"
+      }
+    ],
+    "approvedAt": "2024-01-20T11:00:00.000Z",
+    "approvedBy": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "auditTrail": [
+      {
+        "action": "created",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-10T09:00:00.000Z"
+      },
+      {
+        "action": "verified",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-15T11:00:00.000Z"
+      }
+    ],
+    "searchableText": "CLT001002 David Wilson david.wilson@example.com +94770000002 827654321V Wilson Enterprises Business Owner Approved",
+    "createdAt": "2024-01-10T09:00:00.000Z",
+    "updatedAt": "2024-01-20T11:00:00.000Z",
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "68b73962256d7d99a03d8707"
+    },
+    "registrationId": "CLT001003",
+    "submissionDate": "2024-01-25T13:00:00.000Z",
+    "lastUpdated": "2024-01-26T15:00:00.000Z",
+    "assignedReviewer": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "verifiedOverview": false,
+    "assignedAgent": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedBy": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedAt": "2024-01-25T13:00:00.000Z",
+    "personalInfo": {
+      "fullName": "Bob Smith",
+      "contactNumber": "+94770000003",
+      "email": "bob.smith@example.com",
+      "dateOfBirth": "1995-11-10T00:00:00.000Z",
+      "address": "789 Oak Avenue, Colombo 07",
+      "district": "Colombo",
+      "verified": false
+    },
+    "verificationStatus": {
+      "identity": {
+        "verified": false,
+        "documents": [
+          {
+            "type": "NIC",
+            "url": "https://example.com/nic-bob-smith.jpg",
+            "uploadedAt": "2024-01-25T13:00:00.000Z",
+            "status": "pending"
+          }
+        ]
+      },
+      "employment": {
+        "verified": false,
+        "documents": [
+          {
+            "type": "university_letter",
+            "url": "https://example.com/university-letter-bob-smith.pdf",
+            "uploadedAt": "2024-01-25T13:00:00.000Z",
+            "status": "pending"
+          }
+        ]
+      },
+      "income": {
+        "verified": false,
+        "documents": []
+      },
+      "documents": {
+        "verified": false,
+        "completionPercentage": 60
+      }
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "956789012V",
+      "idCardUrl": "https://example.com/nic-bob-smith.jpg",
+      "verified": false
+    },
+    "employmentDetails": {
+      "employer": "University of Colombo",
+      "jobRole": "Student",
+      "monthlyIncome": 25000,
+      "employmentDuration": "2 years",
+      "employmentLetterUrl": "https://example.com/university-letter-bob-smith.pdf",
+      "verified": false,
+      "workAddress": "University of Colombo, Colombo 03"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/nic-bob-smith.jpg",
+      "employmentLetterUrl": "https://example.com/university-letter-bob-smith.pdf",
+      "photoUrl": "https://example.com/photo-bob-smith.jpg",
+      "uploadedAt": "2024-01-25T13:00:00.000Z",
+      "verified": false
+    },
+    "riskProfile": {
+      "score": 65,
+      "factors": ["Student income", "Limited credit history"],
+      "lastAssessed": "2024-01-26T15:00:00.000Z",
+      "assessedBy": {
+        "$oid": "68b73962256d7d99a03d8696"
+      },
+      "riskLevel": "medium",
+      "notes": "Student applicant with limited income history"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "preferredLanguage": "english",
+      "contactTimePreference": "afternoon"
+    },
+    "region": {
+      "$oid": "68be8db25b5b65b07a029e5a"
+    },
+    "status": "Under_Review",
+    "statusHistory": [
+      {
+        "status": "Pending",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-25T13:00:00.000Z",
+        "reason": "Initial application"
+      },
+      {
+        "status": "Under_Review",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-26T15:00:00.000Z",
+        "reason": "Documents submitted, under review"
+      }
+    ],
+    "auditTrail": [
+      {
+        "action": "created",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-25T13:00:00.000Z"
+      }
+    ],
+    "searchableText": "CLT001003 Bob Smith bob.smith@example.com +94770000003 956789012V University of Colombo Student Under_Review",
+    "createdAt": "2024-01-25T13:00:00.000Z",
+    "updatedAt": "2024-01-26T15:00:00.000Z",
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "68b73962256d7d99a03d8708"
+    },
+    "registrationId": "CLT001004",
+    "submissionDate": "2024-01-28T10:00:00.000Z",
+    "lastUpdated": "2024-01-28T10:00:00.000Z",
+    "assignedReviewer": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "verifiedOverview": false,
+    "assignedAgent": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedBy": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedAt": "2024-01-28T10:00:00.000Z",
+    "personalInfo": {
+      "fullName": "Alice Johnson",
+      "contactNumber": "+94770000004",
+      "email": "alice.johnson@example.com",
+      "dateOfBirth": "1978-05-20T00:00:00.000Z",
+      "address": "123 Main Street, Colombo 05",
+      "district": "Colombo",
+      "verified": false
+    },
+    "verificationStatus": {
+      "identity": {
+        "verified": false,
+        "documents": [
+          {
+            "type": "NIC",
+            "url": "https://example.com/nic-alice-johnson.jpg",
+            "uploadedAt": "2024-01-28T10:00:00.000Z",
+            "status": "pending"
+          }
+        ]
+      },
+      "employment": {
+        "verified": false,
+        "documents": [
+          {
+            "type": "medical_certificate",
+            "url": "https://example.com/medical-certificate-alice-johnson.pdf",
+            "uploadedAt": "2024-01-28T10:00:00.000Z",
+            "status": "pending"
+          }
+        ]
+      },
+      "income": {
+        "verified": false,
+        "documents": []
+      },
+      "documents": {
+        "verified": false,
+        "completionPercentage": 40
+      }
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "785432109V",
+      "idCardUrl": "https://example.com/nic-alice-johnson.jpg",
+      "verified": false
+    },
+    "employmentDetails": {
+      "employer": "XYZ Company",
+      "jobRole": "Accountant",
+      "monthlyIncome": 80000,
+      "employmentDuration": "3 years",
+      "employmentLetterUrl": "https://example.com/employment-letter-alice-johnson.pdf",
+      "verified": false,
+      "workAddress": "456 Commercial Street, Colombo 01"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/nic-alice-johnson.jpg",
+      "employmentLetterUrl": "https://example.com/employment-letter-alice-johnson.pdf",
+      "photoUrl": "https://example.com/photo-alice-johnson.jpg",
+      "uploadedAt": "2024-01-28T10:00:00.000Z",
+      "verified": false
+    },
+    "riskProfile": {
+      "score": 70,
+      "factors": ["Medical emergency", "Stable employment"],
+      "lastAssessed": "2024-01-28T10:00:00.000Z",
+      "assessedBy": {
+        "$oid": "68b73962256d7d99a03d8696"
+      },
+      "riskLevel": "medium",
+      "notes": "Medical emergency loan application"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "preferredLanguage": "english",
+      "contactTimePreference": "morning"
+    },
+    "region": {
+      "$oid": "68be8db25b5b65b07a029e5a"
+    },
+    "status": "Pending",
+    "statusHistory": [
+      {
+        "status": "Pending",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-28T10:00:00.000Z",
+        "reason": "Initial application"
+      }
+    ],
+    "auditTrail": [
+      {
+        "action": "created",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-28T10:00:00.000Z"
+      }
+    ],
+    "searchableText": "CLT001004 Alice Johnson alice.johnson@example.com +94770000004 785432109V XYZ Company Accountant Pending",
+    "createdAt": "2024-01-28T10:00:00.000Z",
+    "updatedAt": "2024-01-28T10:00:00.000Z",
+    "__v": 0
+  },
+  {
+    "_id": {
+      "$oid": "68b73962256d7d99a03d8709"
+    },
+    "registrationId": "CLT001005",
+    "submissionDate": "2024-01-20T08:00:00.000Z",
+    "lastUpdated": "2024-01-23T11:00:00.000Z",
+    "assignedReviewer": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "verifiedOverview": true,
+    "assignedAgent": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedBy": {
+      "$oid": "68b73962256d7d99a03d8696"
+    },
+    "assignedAt": "2024-01-20T08:00:00.000Z",
+    "personalInfo": {
+      "fullName": "Charlie Davis",
+      "contactNumber": "+94770000005",
+      "email": "charlie.davis@example.com",
+      "dateOfBirth": "1980-12-08T00:00:00.000Z",
+      "address": "555 Pine Road, Colombo 06",
+      "district": "Colombo",
+      "verified": true
+    },
+    "verificationStatus": {
+      "identity": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-21T10:00:00.000Z",
+        "documents": [
+          {
+            "type": "NIC",
+            "url": "https://example.com/nic-charlie-davis.jpg",
+            "uploadedAt": "2024-01-20T08:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "employment": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-21T10:00:00.000Z",
+        "documents": [
+          {
+            "type": "paysheet",
+            "url": "https://example.com/paysheet-charlie-davis.pdf",
+            "uploadedAt": "2024-01-20T08:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "income": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-21T10:00:00.000Z",
+        "monthlyIncomeVerified": 120000,
+        "documents": [
+          {
+            "type": "bank_statement",
+            "url": "https://example.com/bank-statement-charlie-davis.pdf",
+            "uploadedAt": "2024-01-20T08:00:00.000Z",
+            "status": "approved"
+          }
+        ]
+      },
+      "documents": {
+        "verified": true,
+        "verifiedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "verifiedAt": "2024-01-21T10:00:00.000Z",
+        "completionPercentage": 100
+      }
+    },
+    "identityVerification": {
+      "idType": "NIC",
+      "idNumber": "801234567V",
+      "idCardUrl": "https://example.com/nic-charlie-davis.jpg",
+      "verified": true,
+      "verificationDate": "2024-01-21T10:00:00.000Z"
+    },
+    "employmentDetails": {
+      "employer": "Tech Solutions Ltd",
+      "jobRole": "Software Engineer",
+      "monthlyIncome": 120000,
+      "employmentDuration": "6 years",
+      "employmentLetterUrl": "https://example.com/employment-letter-charlie-davis.pdf",
+      "verified": true,
+      "workAddress": "789 Tech Park, Colombo 02"
+    },
+    "documents": {
+      "idCardUrl": "https://example.com/nic-charlie-davis.jpg",
+      "employmentLetterUrl": "https://example.com/employment-letter-charlie-davis.pdf",
+      "photoUrl": "https://example.com/photo-charlie-davis.jpg",
+      "paysheetUrl": "https://example.com/paysheet-charlie-davis.pdf",
+      "uploadedAt": "2024-01-20T08:00:00.000Z",
+      "verified": true
+    },
+    "riskProfile": {
+      "score": 45,
+      "factors": [
+        "High loan amount",
+        "Insufficient income for loan size",
+        "Low credit score"
+      ],
+      "lastAssessed": "2024-01-22T14:00:00.000Z",
+      "assessedBy": {
+        "$oid": "68b73962256d7d99a03d8696"
+      },
+      "riskLevel": "high",
+      "notes": "High risk due to loan amount exceeding income capacity"
+    },
+    "preferences": {
+      "emailNotifications": true,
+      "smsNotifications": true,
+      "preferredLanguage": "english",
+      "contactTimePreference": "evening"
+    },
+    "region": {
+      "$oid": "68be8db25b5b65b07a029e5a"
+    },
+    "status": "Rejected",
+    "statusHistory": [
+      {
+        "status": "Pending",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "changedAt": "2024-01-20T08:00:00.000Z",
+        "reason": "Initial application"
+      },
+      {
+        "status": "Rejected",
+        "changedBy": {
+          "$oid": "68b73962256d7d99a03d8693"
+        },
+        "changedAt": "2024-01-23T11:00:00.000Z",
+        "reason": "Credit score too low for loan amount"
+      }
+    ],
+    "rejectedAt": "2024-01-23T11:00:00.000Z",
+    "rejectedBy": {
+      "$oid": "68b73962256d7d99a03d8693"
+    },
+    "rejectionReason": "Credit score too low for loan amount",
+    "auditTrail": [
+      {
+        "action": "created",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-20T08:00:00.000Z"
+      },
+      {
+        "action": "verified",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8696"
+        },
+        "performedAt": "2024-01-21T10:00:00.000Z"
+      },
+      {
+        "action": "rejected",
+        "performedBy": {
+          "$oid": "68b73962256d7d99a03d8693"
+        },
+        "performedAt": "2024-01-23T11:00:00.000Z"
+      }
+    ],
+    "searchableText": "CLT001005 Charlie Davis charlie.davis@example.com +94770000005 801234567V Tech Solutions Ltd Software Engineer Rejected",
+    "createdAt": "2024-01-20T08:00:00.000Z",
+    "updatedAt": "2024-01-23T11:00:00.000Z",
+    "__v": 0
+  }
+]

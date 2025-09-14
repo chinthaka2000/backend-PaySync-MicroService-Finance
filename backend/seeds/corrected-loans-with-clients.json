@@ -1,0 +1,187 @@
+[
+  {
+    "loanApplicationId": "L1001004",
+    "borrowerName": "Alice Johnson",
+    "amount": 400000,
+    "status": "Pending",
+    "workflowStage": "application_submitted",
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedRegionalManager": "68b73962256d7d99a03d8693",
+    "createdAt": "2024-01-28T10:00:00.000Z",
+    "updatedAt": "2024-01-28T10:00:00.000Z",
+    "interestRate": 13,
+    "termMonths": 24,
+    "monthlyPayment": 20000,
+    "totalPayableAmount": 480000,
+    "product": "Personal Loan",
+    "purpose": "Medical expenses",
+    "totalPaid": 0,
+    "remainingBalance": 400000,
+    "daysOverdue": 0,
+    "agentReview": {
+      "status": "Pending",
+      "comments": ""
+    },
+    "regionalApproval": {
+      "status": "Pending",
+      "comments": ""
+    },
+    "clientUserId": "507f1f77bcf86cd799439011",
+    "borrowerId": "507f1f77bcf86cd799439011",
+    "borrowerDetails": {
+      "fullName": "Alice Johnson",
+      "contactNumber": "+94770000001",
+      "email": "alice.johnson@example.com",
+      "address": "123 Main Street, Colombo",
+      "district": "Colombo"
+    }
+  },
+  {
+    "loanApplicationId": "L1001003",
+    "borrowerName": "Bob Smith",
+    "amount": 300000,
+    "status": "Under Review",
+    "workflowStage": "agent_review",
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedRegionalManager": "68b73962256d7d99a03d8693",
+    "createdAt": "2024-01-25T13:00:00.000Z",
+    "updatedAt": "2024-01-26T15:00:00.000Z",
+    "interestRate": 8.5,
+    "termMonths": 48,
+    "monthlyPayment": 7500,
+    "totalPayableAmount": 360000,
+    "product": "Education Loan",
+    "purpose": "Higher education",
+    "totalPaid": 0,
+    "remainingBalance": 300000,
+    "daysOverdue": 0,
+    "agentReview": {
+      "status": "Pending",
+      "comments": ""
+    },
+    "regionalApproval": {
+      "status": "Pending",
+      "comments": ""
+    },
+    "clientUserId": "507f1f77bcf86cd799439012",
+    "borrowerId": "507f1f77bcf86cd799439012",
+    "borrowerDetails": {
+      "fullName": "Bob Smith",
+      "contactNumber": "+94770000002",
+      "email": "bob.smith@example.com",
+      "address": "789 Oak Avenue, Kandy",
+      "district": "Kandy"
+    }
+  },
+  {
+    "loanApplicationId": "L1001005",
+    "borrowerName": "Charlie Davis",
+    "amount": 2000000,
+    "status": "Rejected",
+    "workflowStage": "rejected",
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedRegionalManager": "68b73962256d7d99a03d8693",
+    "createdAt": "2024-01-20T08:00:00.000Z",
+    "updatedAt": "2024-01-23T11:00:00.000Z",
+    "interestRate": 9.5,
+    "termMonths": 120,
+    "monthlyPayment": 21250,
+    "totalPayableAmount": 2550000,
+    "product": "Home Loan",
+    "purpose": "Home purchase",
+    "totalPaid": 0,
+    "remainingBalance": 2000000,
+    "daysOverdue": 0,
+    "agentReview": {
+      "status": "Rejected",
+      "comments": "Insufficient income documentation"
+    },
+    "regionalApproval": {
+      "status": "Rejected",
+      "comments": "Credit score too low for loan amount"
+    },
+    "clientUserId": "507f1f77bcf86cd799439013",
+    "borrowerId": "507f1f77bcf86cd799439013",
+    "borrowerDetails": {
+      "fullName": "Charlie Davis",
+      "contactNumber": "+94770000003",
+      "email": "charlie.davis@example.com",
+      "address": "555 Pine Road, Galle",
+      "district": "Galle"
+    }
+  },
+  {
+    "loanApplicationId": "L1001002",
+    "borrowerName": "David Wilson",
+    "amount": 750000,
+    "status": "Active",
+    "workflowStage": "active",
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedRegionalManager": "68b73962256d7d99a03d8693",
+    "createdAt": "2024-01-10T09:00:00.000Z",
+    "updatedAt": "2024-01-20T11:00:00.000Z",
+    "interestRate": 11,
+    "termMonths": 36,
+    "monthlyPayment": 25000,
+    "totalPayableAmount": 900000,
+    "product": "Business Loan",
+    "purpose": "Business expansion",
+    "totalPaid": 0,
+    "remainingBalance": 750000,
+    "daysOverdue": 0,
+    "agentReview": {
+      "status": "Approved",
+      "comments": "Strong business plan and good financials"
+    },
+    "regionalApproval": {
+      "status": "Approved",
+      "comments": "Approved for business expansion"
+    },
+    "clientUserId": "507f1f77bcf86cd799439014",
+    "borrowerId": "507f1f77bcf86cd799439014",
+    "borrowerDetails": {
+      "fullName": "David Wilson",
+      "contactNumber": "+94770000004",
+      "email": "david.wilson@example.com",
+      "address": "321 Business Park, Colombo",
+      "district": "Colombo"
+    }
+  },
+  {
+    "loanApplicationId": "L1001001",
+    "borrowerName": "Emma Thompson",
+    "amount": 500000,
+    "status": "Approved",
+    "workflowStage": "active",
+    "assignedAgent": "68b73962256d7d99a03d8696",
+    "assignedRegionalManager": "68b73962256d7d99a03d8693",
+    "createdAt": "2024-01-05T08:00:00.000Z",
+    "updatedAt": "2024-01-15T10:00:00.000Z",
+    "interestRate": 12.5,
+    "termMonths": 24,
+    "monthlyPayment": 25000,
+    "totalPayableAmount": 600000,
+    "product": "Personal Loan",
+    "purpose": "Home renovation",
+    "totalPaid": 0,
+    "remainingBalance": 500000,
+    "daysOverdue": 0,
+    "agentReview": {
+      "status": "Approved",
+      "comments": "Client has good credit history and stable income"
+    },
+    "regionalApproval": {
+      "status": "Approved",
+      "comments": "Approved for home renovation project"
+    },
+    "clientUserId": "507f1f77bcf86cd799439015",
+    "borrowerId": "507f1f77bcf86cd799439015",
+    "borrowerDetails": {
+      "fullName": "Emma Thompson",
+      "contactNumber": "+94770000005",
+      "email": "emma.thompson@example.com",
+      "address": "456 Garden Lane, Colombo",
+      "district": "Colombo"
+    }
+  }
+]
