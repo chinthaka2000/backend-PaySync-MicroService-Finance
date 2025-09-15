@@ -1,0 +1,44 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Reminder - PaySync</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background-color: #f39c12; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background-color: #f9f9f9; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Payment Reminder</h1>
+        </div>
+        <div class="content">
+            <h2>Dear {{clientName}},</h2>
+            <p>This is a friendly reminder about your upcoming loan payment.</p>
+            
+            <div class="warning">
+                <p><strong>Payment Details:</strong></p>
+                <ul>
+                    <li><strong>Loan ID:</strong> {{loanId}}</li>
+                    <li><strong>Due Date:</strong> {{dueDate}}</li>
+                    <li><strong>Amount Due:</strong> LKR {{amountDue}}</li>
+                    <li><strong>Days Until Due:</strong> {{daysUntilDue}}</li>
+                </ul>
+            </div>
+            
+            <p>Please ensure your payment is made on time to avoid any late fees.</p>
+            
+            <p>Best regards,<br>PaySync Team</p>
+        </div>
+        <div class="footer">
+            <p>This is an automated message from PaySync. Please do not reply to this email.</p>
+        </div>
+    </div>
+</body>
+</html>

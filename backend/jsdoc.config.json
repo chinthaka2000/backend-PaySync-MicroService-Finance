@@ -1,0 +1,37 @@
+{
+  "source": {
+    "include": [
+      "./controllers/",
+      "./services/",
+      "./repositories/",
+      "./utils/",
+      "./middlewares/",
+      "./validation/",
+      "./models/",
+      "./routes/"
+    ],
+    "includePattern": "\\.(js|jsx)$",
+    "exclude": [
+      "node_modules/",
+      "tests/",
+      "logs/",
+      "uploads/"
+    ]
+  },
+  "opts": {
+    "destination": "./docs/jsdoc/",
+    "recurse": true,
+    "readme": "./docs/API_DOCUMENTATION.md"
+  },
+  "plugins": [
+    "plugins/markdown"
+  ],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false
+  },
+  "metadata": {
+    "title": "PaySync Backend API Documentation",
+    "description": "Comprehensive API documentation for PaySync microfinance backend system"
+  }
+}
