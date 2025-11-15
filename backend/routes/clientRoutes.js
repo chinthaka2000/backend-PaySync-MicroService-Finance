@@ -3,12 +3,16 @@ const router = express.Router();
 const clientController = require('../controllers/clientController');
 const authClientController = require('../controllers/authClientController');
 const { validate, clientSchemas, validateClientDocuments } = require('../validation');
+const { upload } = require("../middlewares/multer");
 
 router.post('/register',
-  validateClientDocuments,
-  validate(clientSchemas.registerClient.body),
+  upload.fields([
+    { name: 'idCard', maxCount: 1 },
+    { name: 'employmentLetter', maxCount: 1 }
+  ]),
   clientController.registerClient
 );
+
 
 
 router.get('/client', clientController.getClients);
