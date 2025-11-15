@@ -55,22 +55,32 @@ exports.registerClient = async (req, res) => {
     const files = req.files;
     const registrationId = await generateRegistrationId();
 
+    const idCardUrl = files?.idCard ? files.idCard[0].path : null;
+    const employmentLetterUrl = files?.employmentLetter ? files.employmentLetter[0].path : null;
+
     const newClient = new Client({
-      registrationId,
+      registrationId: registrationId,
       personalInfo: {
-        ...clientData.personalInfo,
+        fullName: clientData.personalInfo.fullName,
+        contactNumber: clientData.personalInfo.contactNumber,
+        email: clientData.personalInfo.email,
+        dateOfBirth: clientData.personalInfo.dateOfBirth,
+        address: clientData.personalInfo.address,
+        district: clientData.personalInfo.district
       },
       identityVerification: {
-        ...clientData.identityVerification,
-        idCardUrl: files?.idCard ? files.idCard[0].path : null,
+        idType: clientData.identityVerification.idType || 'NIC',
+        idNumber: clientData.identityVerification.idNumber,
+        idCardUrl: idCardUrl // in frontend you sholud ensure the name idcard in form-data
       },
       employmentDetails: {
-        ...clientData.employmentDetails,
-        employmentLetterUrl: files?.employmentLetter
-          ? files.employmentLetter[0].path
-          : null,
+        employer: clientData.employmentDetails.employer,
+        jobRole: clientData.employmentDetails.jobRole,
+        monthlyIncome: clientData.employmentDetails.monthlyIncome,
+        employmentDuration: clientData.employmentDetails.employmentDuration,
+        employmentLetterUrl: employmentLetterUrl // in frontend you should ensure the name employmentLetter in form-data
       },
-      assignedReviewer: agent._id,
+      assignedReviewer: agent._id
     });
 
     await newClient.save();
@@ -130,7 +140,7 @@ exports.getClients = async (req, res) => {
 // Get pending clients
 exports.getPendingClient = async (req, res) => {
   try {
-    const clients = await Client.find({ status: "Pending Review" });
+    const clients = await Client.find({ status: "Pending" });
     res.json(clients);
   } catch (error) {
     res.status(500).json({ message: error.message });
