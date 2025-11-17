@@ -14,15 +14,30 @@ const { logger } = require('../utils/logger');
  */
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
+    // Allow requests with no origin (mobile apps, curl)
     if (!origin) return callback(null, true);
 
-    if (config.security.corsOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      logger.warn('CORS blocked request', { origin, allowedOrigins: config.security.corsOrigins });
-      callback(new Error('Not allowed by CORS'));
+    const allowedOrigins = config.security.corsOrigins;
+
+    // Allow all Vercel preview URLs like:
+    // https://project-randomhash.vercel.app
+    const vercelPattern = /\.vercel\.app$/;
+
+    // Allow Render frontend
+    const renderPattern = /\.onrender\.com$/;
+
+    // Check rules
+    if (
+      allowedOrigins.includes(origin) ||         // exact match
+      vercelPattern.test(origin) ||              // wildcard for all Vercel URLs
+      renderPattern.test(origin)                 // wildcard for all Render frontends
+    ) {
+      return callback(null, true);
     }
+
+    // Block anything else
+    logger.warn('CORS blocked request', { origin, allowedOrigins });
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
@@ -38,6 +53,7 @@ const corsOptions = {
   maxAge: 86400 // 24 hours
 };
 
+
 /**
  * Rate Limiting Configuration
  * Implements different rate limits for different endpoints
@@ -47,6 +63,7 @@ const corsOptions = {
 const generalRateLimit = rateLimit({
   windowMs: config.security.rateLimitWindowMs,
   max: config.security.rateLimitMaxRequests,
+  trustProxy: config.security.trustProxy, // Trust proxy for accurate IP detection
   message: {
     error: 'Too many requests from this IP, please try again later.',
     retryAfter: Math.ceil(config.security.rateLimitWindowMs / 1000)
@@ -74,6 +91,7 @@ const generalRateLimit = rateLimit({
 const agentRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 500, // Allow 500 requests per 15 minutes for agent endpoints
+  trustProxy: config.security.trustProxy, // Trust proxy for accurate IP detection
   message: {
     error: 'Too many agent requests from this IP, please try again later.',
     retryAfter: 900
@@ -101,6 +119,7 @@ const agentRateLimit = rateLimit({
 const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // Limit each IP to 5 requests per windowMs
+  trustProxy: config.security.trustProxy, // Trust proxy for accurate IP detection
   message: {
     error: 'Too many authentication attempts, please try again later.',
     retryAfter: 900 // 15 minutes in seconds
@@ -129,6 +148,7 @@ const authRateLimit = rateLimit({
 const fileUploadRateLimit = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // Limit each IP to 10 file uploads per minute
+  trustProxy: config.security.trustProxy, // Trust proxy for accurate IP detection
   message: {
     error: 'Too many file uploads, please try again later.',
     retryAfter: 60
