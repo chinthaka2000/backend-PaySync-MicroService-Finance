@@ -20,80 +20,146 @@ async function generateRegistrationId() {
 }
 
 // Register new client
+
+
 exports.registerClient = async (req, res) => {
   try {
     const clientData = JSON.parse(req.body.data);
 
-    if (!clientData.personalInfo?.district) {
+    if (!clientData.personalInfo?.district)
+      return res.status(400).json({ message: "District is required." });
+
+    const district = clientData.personalInfo.district;
+
+    const existingClient = await Client.findOne({"personalInfo.email": clientData.personalInfo.email});
+    if (existingClient) {
       return res
         .status(400)
-        .json({ message: "District is required in personalInfo" });
+        .json({ message: "Email already registered. Please use a different email." });
     }
 
-    const existingClient = await Client.findOne({
-      registrationId: clientData.registrationId,
-    });
-    if (existingClient)
-      return res
-        .status(400)
-        .json({ message: "Client already exists with this ID" });
-
-    const region = await Region.findOne({
-      districts: clientData.personalInfo.district,
-    });
-    if (!region)
-      return res
-        .status(404)
-        .json({ message: "No region found for this district" });
-
-    const agent = await Staff.findOne({ role: "agent", region: region._id });
-    if (!agent)
-      return res
-        .status(404)
-        .json({ message: "No agent found for this region" });
-
-    const files = req.files;
+    // 1. Generate registration ID
     const registrationId = await generateRegistrationId();
 
+    // 2. Find region
+    const region = await Region.findOne({ districts: district });
+    if (!region)
+      return res.status(404).json({ message: "Region not found for district." });
+
+    console.log("Region found:", region._id);
+    console.log("District:", district);
+
+    // 3. Assign Agent (who will also act as reviewer)
+    const assignedAgent = await Staff.findOne({
+      role: "agent",
+      region: region._id,
+      assignedDistricts: district
+    });
+
+    console.log("Agent", assignedAgent._id);
+
+    if (!assignedAgent)
+      return res.status(404).json({ message: "No agent found for this district" });
+
+    // 4. Handle files
+    const files = req.files;
     const idCardUrl = files?.idCard ? files.idCard[0].path : null;
     const employmentLetterUrl = files?.employmentLetter ? files.employmentLetter[0].path : null;
 
+    // 5. Create new client
     const newClient = new Client({
-      registrationId: registrationId,
+      registrationId,
+      submissionDate: new Date(),
+      lastUpdated: new Date(),
+
+      assignedReviewer: assignedAgent._id, // same as agent
+      verifiedOverview: false,
+
+      assignedAgent: assignedAgent._id,
+      assignedBy: assignedAgent._id,
+      assignedAt: new Date(),
+
+      assignmentHistory: [
+        {
+          agent: assignedAgent._id,
+          assignedBy: assignedAgent._id,
+          assignedAt: new Date(),
+          reason: "Auto assigned by registration API"
+        }
+      ],
+
       personalInfo: {
         fullName: clientData.personalInfo.fullName,
         contactNumber: clientData.personalInfo.contactNumber,
         email: clientData.personalInfo.email,
         dateOfBirth: clientData.personalInfo.dateOfBirth,
         address: clientData.personalInfo.address,
-        district: clientData.personalInfo.district
+        district: district,
+        verified: false
       },
+
+      region: region._id,
+      status: "Pending",
+
       identityVerification: {
-        idType: clientData.identityVerification.idType || 'NIC',
+        idType: clientData.identityVerification.idType || "NIC",
         idNumber: clientData.identityVerification.idNumber,
-        idCardUrl: idCardUrl // in frontend you sholud ensure the name idcard in form-data
+        idCardUrl: idCardUrl,
+        verified: false
       },
+
       employmentDetails: {
         employer: clientData.employmentDetails.employer,
         jobRole: clientData.employmentDetails.jobRole,
         monthlyIncome: clientData.employmentDetails.monthlyIncome,
         employmentDuration: clientData.employmentDetails.employmentDuration,
-        employmentLetterUrl: employmentLetterUrl // in frontend you should ensure the name employmentLetter in form-data
+        employmentLetterUrl: employmentLetterUrl,
+        verified: false
       },
-      assignedReviewer: agent._id
+
+      statusHistory: [
+        {
+          status: "Pending",
+          changedBy: assignedAgent._id,
+          changedAt: new Date(),
+          reason: "Client submitted"
+        }
+      ],
+
+      auditTrail: [
+        {
+          action: "created",
+          performedBy: assignedAgent._id,
+          changes: { registrationId },
+          performedAt: new Date(),
+          ipAddress: req.ip,
+          userAgent: req.headers["user-agent"]
+        },
+        {
+          action: "assigned",
+          performedBy: assignedAgent._id,
+          changes: { agent: assignedAgent._id, district: district },
+          performedAt: new Date()
+        }
+      ]
     });
 
+    // 6. Save client
     await newClient.save();
-    res
-      .status(201)
-      .json({ message: "Client registered successfully", client: newClient });
+
+    return res.status(201).json({
+      message: "Client registered successfully",
+      client: newClient
+    });
   } catch (error) {
     console.error("Error registering client:", error);
-    res
-      .status(500)
-      .json({ message: "Error registering client", error: error.message });
+    return res.status(500).json({
+      message: "Error registering client",
+      error: error.message
+    });
   }
 };
+
 
 // Get clients with filters (Approved/Rejected + search)
 exports.getClients = async (req, res) => {
@@ -170,10 +236,10 @@ exports.getClientById = async (req, res) => {
 // Approve client (creates ClientUser + sends email)
 exports.clientApprovedMessage = async (req, res) => {
   try {
-    const { id, notes } = req.body;
-    const client = await Client.findOne({ registrationId: id }).populate(
-      "assignedReviewer"
-    );
+    const id = req.params.id;
+    const notes = req.body.notes;
+
+    const client = await Client.findById(id).populate("assignedReviewer");
     if (!client) return res.status(404).json({ message: "Client not found" });
 
     if (["Approved", "Rejected"].includes(client.status)) {
@@ -227,8 +293,10 @@ exports.clientApprovedMessage = async (req, res) => {
 // Reject client
 exports.clientRejectedMessage = async (req, res) => {
   try {
-    const { id } = req.params;
-    const client = await Client.findOne({ registrationId: id });
+    const id = req.params.id;
+    const notes = req.body.notes;
+
+    const client = await Client.findById(id).populate("assignedReviewer");
     if (!client) return res.status(404).json({ message: "Client not found" });
 
     if (["Approved", "Rejected"].includes(client.status)) {
@@ -238,6 +306,8 @@ exports.clientRejectedMessage = async (req, res) => {
     }
 
     const clientEmail = client.personalInfo.email;
+    if (!clientEmail)
+      return res.status(400).json({ message: "Client email not found" });
     await sendEmail(
       clientEmail,
       "Application Status - Declined",
@@ -328,21 +398,74 @@ exports.getClientUserByVerifierId = async (req, res) => {
 
 // Approve client by query
 exports.approveClientByQuery = async (req, res) => {
+  // try {
+  //   const { id } = req.query || req.body;
+  //   const client = await Client.findOne({ registrationId: id });
+  //   if (!client) return res.status(404).json({ message: "Client not found" });
+
+  //   if (["Approved", "Rejected"].includes(client.status)) {
+  //     return res.status(400).json({ message: `Client already ${client.status}` });
+  //   }
+
+  //   client.status = "Approved";
+  //   client.approvedAt = new Date();
+  //   await client.save();
+
+  //   res.json({ message: "Client approved successfully", client });
+  // } catch (error) {
+  //   res.status(500).json({ message: error.message });
+  // }
   try {
-    const { id } = req.query || req.body;
-    const client = await Client.findOne({ registrationId: id });
+    const id = req.params.id;
+    const notes = req.body.notes;
+
+    const client = await Client.findById(id).populate("assignedReviewer");
     if (!client) return res.status(404).json({ message: "Client not found" });
 
     if (["Approved", "Rejected"].includes(client.status)) {
-      return res.status(400).json({ message: `Client already ${client.status}` });
+      return res
+        .status(400)
+        .json({ message: `Client already ${client.status}` });
     }
+
+    const clientEmail = client.personalInfo.email;
+    if (!clientEmail)
+      return res.status(400).json({ message: "Client email not found" });
+
+    const password = generateTemporaryPassword();
+    await sendEmail(
+      clientEmail,
+      "Client approved",
+      `Welcome to Loan Management System.\nYour account has been created.\nUsername: ${clientEmail}\nPassword: ${password}`
+    );
 
     client.status = "Approved";
     client.approvedAt = new Date();
+    client.agentNotes = notes;
     await client.save();
 
-    res.json({ message: "Client approved successfully", client });
+    let clientUser = await ClientUser.findOne({ email: clientEmail });
+    if (!clientUser) {
+      clientUser = new ClientUser({
+        clientId: client._id,
+        username: clientEmail,
+        email: clientEmail,
+        password,
+        role: "client",
+        isActive: true,
+      });
+      await clientUser.save();
+    } else {
+      clientUser.isActive = true;
+      await clientUser.save();
+    }
+
+    res.json({
+      message: "Client approved and email sent successfully",
+      client,
+    });
   } catch (error) {
+    console.error("Error approving client:", error);
     res.status(500).json({ message: error.message });
   }
 };
