@@ -6,8 +6,9 @@ const mongoose = require("mongoose");
 const Client = require("../models/Client");
 const Region = require("../models/Region");
 const Staff = require("../models/Staff");
-const ClientUser = require("../models/clientUsers");
+const ClientUsers = require("../models/clientUsers");
 const sendEmail = require("../utils/sendEmail");
+const bcrypt = require("bcryptjs");
 
 // Utility: Generate sequential registration IDs (e.g., L00001)
 async function generateRegistrationId() {
@@ -254,6 +255,7 @@ exports.clientApprovedMessage = async (req, res) => {
       return res.status(400).json({ message: "Client email not found" });
 
     const password = generateTemporaryPassword();
+    const hashedPassword = await bcrypt.hash(password, 10);
     await sendEmail(
       clientEmail,
       "Client approved",
@@ -265,25 +267,39 @@ exports.clientApprovedMessage = async (req, res) => {
     client.agentNotes = notes;
     await client.save();
 
-    let clientUser = await ClientUser.findOne({ email: clientEmail });
-    if (!clientUser) {
-      clientUser = new ClientUser({
+    // let clientUser = await ClientUsers.findOne({ email: clientEmail });
+    // if (!clientUser) {
+    //   clientUser = new ClientUser({
+    //     clientId: client._id,
+    //     username: clientEmail,
+    //     email: clientEmail,
+    //     password,
+    //     role: "client",
+    //     isActive: true,
+    //   });
+    //   await clientUser.save();
+    // } else {
+    //   clientUser.isActive = true;
+    //   await clientUser.save();
+    // }
+
+    const clientUser = await ClientUsers.findOneAndUpdate(
+      { email: clientEmail },
+      {
         clientId: client._id,
         username: clientEmail,
         email: clientEmail,
-        password,
+        password: hashedPassword,
         role: "client",
         isActive: true,
-      });
-      await clientUser.save();
-    } else {
-      clientUser.isActive = true;
-      await clientUser.save();
-    }
+      },
+      { upsert: true, new: true }
+    );
 
     res.json({
       message: "Client approved and email sent successfully",
       client,
+      clientUser,
     });
   } catch (error) {
     console.error("Error approving client:", error);
@@ -318,6 +334,7 @@ exports.clientRejectedMessage = async (req, res) => {
 
     client.status = "Rejected";
     client.rejectedAt = new Date();
+    client.agentNotes = notes;
     await client.save();
 
     res.json({
