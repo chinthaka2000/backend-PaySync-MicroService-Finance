@@ -40,7 +40,7 @@ POST /api/auth/login
       "accessToken": "eyJhbGciOiJIUzI1NiIs...",
       "refreshToken": "eyJhbGciOiJIUzI1NiIs...",
       "tokenType": "Bearer",
-      "expiresIn": "15m"
+      "expiresIn": "35m"
     }
   }
 }

@@ -235,6 +235,7 @@ exports.getClientById = async (req, res) => {
 
 // Approve client (creates ClientUser + sends email)
 exports.clientApprovedMessage = async (req, res) => {
+  console.log("client approval function backend is working");
   try {
     const id = req.params.id;
     const notes = req.body.notes;
@@ -292,6 +293,7 @@ exports.clientApprovedMessage = async (req, res) => {
 
 // Reject client
 exports.clientRejectedMessage = async (req, res) => {
+  console.log("client rejection function backend is working");
   try {
     const id = req.params.id;
     const notes = req.body.notes;
