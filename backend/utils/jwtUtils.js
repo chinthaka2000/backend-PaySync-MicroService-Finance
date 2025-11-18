@@ -15,7 +15,7 @@ function generateAccessToken(user) {
   const payload = generateJWTPayload(user);
 
   return jwt.sign(payload, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m',
+    expiresIn: process.env.JWT_EXPIRES_IN || '35m',
     issuer: 'paysync-backend',
     audience: 'paysync-client'
   });
@@ -62,7 +62,7 @@ function generateTokenPair(user) {
     accessToken,
     refreshToken,
     tokenType: 'Bearer',
-    expiresIn: process.env.JWT_EXPIRES_IN || '15m'
+    expiresIn: process.env.JWT_EXPIRES_IN || '35m'
   };
 }
 
@@ -129,7 +129,7 @@ async function refreshAccessToken(refreshToken, getUserById) {
       accessToken: newAccessToken,
       refreshToken: refreshToken, // Keep the same refresh token
       tokenType: 'Bearer',
-      expiresIn: process.env.JWT_EXPIRES_IN || '15m'
+      expiresIn: process.env.JWT_EXPIRES_IN || '35m'
     };
   } catch (error) {
     throw new Error(`Token refresh failed: ${error.message}`);
