@@ -7,6 +7,8 @@ const mongoose = require("mongoose");
 const Loan = require("../models/Loan");
 const Client = require("../models/Client");
 const Staff = require("../models/Staff");
+const Grantor = require('../models/Grantor'); // Your Grantor model (not directly used here, but available)
+const Payment = require('../models/Payment');
 const sendEmail = require("../utils/sendEmail");
 const emailService = require("../services/emailService");
 const {
@@ -66,27 +68,229 @@ const { logger } = require("../utils/logger");
  *   }
  * }
  */
+// exports.createLoanApplication = async (req, res) => {
+//   try {
+//     const loanData = req.body;
+//     const user = req.user; // From authentication middleware
+//     const loanRepository = new LoanRepository();
+
+//     logger.info("Creating loan application", {
+//       userId: user.userId,
+//       clientId: loanData.clientUserId,
+//       loanAmount: loanData.loanAmount,
+//     });
+
+//     // Perform comprehensive business rule validation
+//     const validation = await validateLoanApplication(loanData, user);
+
+//     if (!validation.isValid) {
+//       logger.warn("Loan application validation failed", {
+//         userId: user.userId,
+//         errors: validation.errors,
+//       });
+
+//       return res.status(400).json({
+//         success: false,
+//         error: {
+//           code: "BUSINESS_RULE_VIOLATION",
+//           message: "Loan application violates business rules",
+//           details: validation.errors,
+//           timestamp: new Date().toISOString(),
+//         },
+//       });
+//     }
+
+//     // Get client information for workflow assignment
+//     const client = await Client.findById(loanData.clientUserId)
+//       .populate("assignedAgent")
+//       .populate("assignedRegionalManager");
+
+//     if (!client) {
+//       throw new AppError("Client not found", 404, "CLIENT_NOT_FOUND");
+//     }
+
+//     // Calculate monthly payment and total payable amount
+//     const monthlyPayment = calculateMonthlyPayment(
+//       loanData.loanAmount,
+//       loanData.interestRate || 12, // Default 12% if not provided
+//       loanData.loanTerm
+//     );
+
+//     const totalPayableAmount = monthlyPayment * loanData.loanTerm;
+
+//     // Generate unique loan application ID
+//     const loanApplicationId = await generateLoanApplicationId();
+
+//     // Create loan with enhanced workflow tracking
+//     const newLoan = new Loan({
+//       ...loanData,
+//       loanApplicationId,
+//       monthlyInstallment: monthlyPayment,
+//       totalPayableAmount,
+//       loanStatus: "pending",
+
+//       // Assign to agent and regional manager from client
+//       assignedAgent: client.assignedAgent?._id,
+//       assignedRegionalManager: client.assignedRegionalManager?._id,
+//       region: client.assignedAgent?.region || user.region,
+
+//       // Initialize workflow state
+//       workflowState: {
+//         currentStage: "application_submitted",
+//         stageHistory: [
+//           {
+//             stage: "application_submitted",
+//             enteredAt: new Date(),
+//             performedBy: user.userId,
+//           },
+//         ],
+//       },
+
+//       // Initialize review states
+//       agentReview: {
+//         status: "pending",
+//         assignedTo: client.assignedAgent?._id,
+//       },
+//       regionalAdminApproval: {
+//         status: "pending",
+//         assignedTo: client.assignedRegionalManager?._id,
+//       },
+
+//       // Initialize audit trail
+//       auditTrail: [
+//         {
+//           action: "loan_created",
+//           performedBy: user.userId,
+//           timestamp: new Date(),
+//           changes: {
+//             status: "pending",
+//             stage: "application_submitted",
+//             assignedAgent: client.assignedAgent?._id,
+//             assignedRegionalManager: client.assignedRegionalManager?._id,
+//           },
+//           ipAddress: req.ip,
+//           userAgent: req.get("User-Agent"),
+//         },
+//       ],
+
+//       // Calculated fields for performance
+//       calculatedFields: {
+//         totalInterest: totalPayableAmount - loanData.loanAmount,
+//         remainingBalance: loanData.loanAmount,
+//         nextPaymentDate: null, // Will be set when loan is approved
+//         daysOverdue: 0,
+//       },
+
+//       // Searchable text for full-text search
+//       searchableText: `${loanApplicationId} ${client.personalInfo?.fullName} ${loanData.product} ${loanData.purpose}`,
+
+//       createdBy: user.userId,
+//     });
+
+//     await newLoan.save();
+
+//     // Send notification to assigned agent
+//     if (client.assignedAgent?.personalInfo?.email) {
+//       try {
+//         await sendEmail(
+//           client.assignedAgent.personalInfo.email,
+//           "New Loan Application Assigned",
+//           `A new loan application (${loanApplicationId}) has been assigned to you for review. 
+//            Client: ${client.personalInfo?.fullName}
+//            Amount: Rs. ${loanData.loanAmount.toLocaleString()}
+//            Please review and process the application.`
+//         );
+//       } catch (emailError) {
+//         logger.error("Failed to send notification email", emailError, {
+//           loanId: newLoan._id,
+//           agentEmail: client.assignedAgent.personalInfo.email,
+//         });
+//       }
+//     }
+
+//     logger.info("Loan application created successfully", {
+//       loanId: newLoan._id,
+//       loanApplicationId,
+//       userId: user.userId,
+//     });
+
+//     res.status(201).json({
+//       success: true,
+//       message: "Loan application created successfully",
+//       data: {
+//         loan: newLoan,
+//         loanId: newLoan._id,
+//         loanApplicationId,
+//         monthlyPayment,
+//         totalPayableAmount,
+//       },
+//       timestamp: new Date().toISOString(),
+//     });
+//   } catch (error) {
+//     logger.error("Error creating loan application", error, {
+//       userId: req.user?.userId,
+//       loanData: req.body,
+//     });
+
+//     if (error instanceof AppError) {
+//       return res.status(error.statusCode).json({
+//         success: false,
+//         error: {
+//           code: error.errorCode,
+//           message: error.message,
+//           timestamp: new Date().toISOString(),
+//         },
+//       });
+//     }
+
+//     res.status(500).json({
+//       success: false,
+//       error: {
+//         code: "INTERNAL_SERVER_ERROR",
+//         message: "Error creating loan application",
+//         timestamp: new Date().toISOString(),
+//       },
+//     });
+//   }
+// };
+
+
 exports.createLoanApplication = async (req, res) => {
   try {
     const loanData = req.body;
     const user = req.user; // From authentication middleware
     const loanRepository = new LoanRepository();
 
-    logger.info("Creating loan application", {
+    logger.info("Registering loan application", {
       userId: user.userId,
-      clientId: loanData.clientUserId,
       loanAmount: loanData.loanAmount,
     });
 
+    // 🧠 STEP 1: Handling clientUserId
+    if (user.role === "Client") {
+      // If logged-in user is Client, auto-assign their own ID
+      loanData.clientUserId = user.userId;
+    } else {
+      // If staff submits loan, they MUST provide clientUserId
+      if (!loanData.clientUserId) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "CLIENT_ID_REQUIRED",
+            message: "clientUserId must be provided when submitted by staff.",
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+    }
+
     // Perform comprehensive business rule validation
     const validation = await validateLoanApplication(loanData, user);
-
     if (!validation.isValid) {
       logger.warn("Loan application validation failed", {
         userId: user.userId,
         errors: validation.errors,
       });
-
       return res.status(400).json({
         success: false,
         error: {
@@ -101,8 +305,7 @@ exports.createLoanApplication = async (req, res) => {
     // Get client information for workflow assignment
     const client = await Client.findById(loanData.clientUserId)
       .populate("assignedAgent")
-      .populate("assignedRegionalManager");
-
+      .populate("region");
     if (!client) {
       throw new AppError("Client not found", 404, "CLIENT_NOT_FOUND");
     }
@@ -113,19 +316,85 @@ exports.createLoanApplication = async (req, res) => {
       loanData.interestRate || 12, // Default 12% if not provided
       loanData.loanTerm
     );
-
     const totalPayableAmount = monthlyPayment * loanData.loanTerm;
 
     // Generate unique loan application ID
     const loanApplicationId = await generateLoanApplicationId();
 
-    // Create loan with enhanced workflow tracking
+    // Handle guarantor creation (integrating Grantor model)
+    let primaryGuarantorId = null;
+    let secondaryGuarantorId = null;
+
+    // Create primary guarantor if provided
+    if (loanData.primaryGuarantor) {
+      const { name, id, phoneNumber } = loanData.primaryGuarantor;
+      if (!name || !id || !phoneNumber) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "INVALID_INPUT",
+            message: "Primary guarantor must include name, id, and phoneNumber",
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+      const primaryGuarantor = new Grantor({
+        grantorId: `GR${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`, // Generate unique ID
+        personalInfo: {
+          fullName: name,
+          contactNumber: phoneNumber,
+        },
+        identityVerification: {
+          idType: "NIC", // Default; adjust if needed
+          idNumber: id,
+        },
+        // Other fields (e.g., employmentDetails) left empty
+      });
+      await primaryGuarantor.save();
+      primaryGuarantorId = primaryGuarantor._id;
+      logger.info("Primary guarantor created", { grantorId: primaryGuarantor.grantorId });
+    }
+
+    // Create secondary guarantor if provided
+    if (loanData.secondaryGuarantor) {
+      const { name, id, phoneNumber } = loanData.secondaryGuarantor;
+      if (!name || !id || !phoneNumber) {
+        return res.status(400).json({
+          success: false,
+          error: {
+            code: "INVALID_INPUT",
+            message: "Secondary guarantor must include name, id, and phoneNumber",
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+      const secondaryGuarantor = new Grantor({
+        grantorId: `GR${Date.now()}${Math.random().toString(36).substr(2, 5).toUpperCase()}`, // Generate unique ID
+        personalInfo: {
+          fullName: name,
+          contactNumber: phoneNumber,
+        },
+        identityVerification: {
+          idType: "NIC", // Default; adjust if needed
+          idNumber: id,
+        },
+        // Other fields (e.g., employmentDetails) left empty
+      });
+      await secondaryGuarantor.save();
+      secondaryGuarantorId = secondaryGuarantor._id;
+      logger.info("Secondary guarantor created", { grantorId: secondaryGuarantor.grantorId });
+    }
+
+    // Create loan with enhanced workflow tracking (integrating Loan model)
     const newLoan = new Loan({
       ...loanData,
       loanApplicationId,
       monthlyInstallment: monthlyPayment,
       totalPayableAmount,
       loanStatus: "pending",
+      primaryGuarantor: primaryGuarantorId, // Link to created Grantor
+      secondaryGuarantor: secondaryGuarantorId, // Link to created Grantor
+      payments: [], // Initialize empty array for future Payment refs
 
       // Assign to agent and regional manager from client
       assignedAgent: client.assignedAgent?._id,
@@ -157,7 +426,7 @@ exports.createLoanApplication = async (req, res) => {
       // Initialize audit trail
       auditTrail: [
         {
-          action: "loan_created",
+          action: "loanApplication_created",
           performedBy: user.userId,
           timestamp: new Date(),
           changes: {
@@ -165,6 +434,8 @@ exports.createLoanApplication = async (req, res) => {
             stage: "application_submitted",
             assignedAgent: client.assignedAgent?._id,
             assignedRegionalManager: client.assignedRegionalManager?._id,
+            primaryGuarantor: primaryGuarantorId,
+            secondaryGuarantor: secondaryGuarantorId,
           },
           ipAddress: req.ip,
           userAgent: req.get("User-Agent"),
@@ -206,7 +477,7 @@ exports.createLoanApplication = async (req, res) => {
       }
     }
 
-    logger.info("Loan application created successfully", {
+    logger.info("Loan application registered successfully", {
       loanId: newLoan._id,
       loanApplicationId,
       userId: user.userId,
@@ -214,18 +485,20 @@ exports.createLoanApplication = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Loan application created successfully",
+      message: "Loan application registered successfully",
       data: {
         loan: newLoan,
         loanId: newLoan._id,
         loanApplicationId,
         monthlyPayment,
         totalPayableAmount,
+        primaryGuarantorId,
+        secondaryGuarantorId,
       },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    logger.error("Error creating loan application", error, {
+    logger.error("Error registering loan application", error, {
       userId: req.user?.userId,
       loanData: req.body,
     });
@@ -245,7 +518,7 @@ exports.createLoanApplication = async (req, res) => {
       success: false,
       error: {
         code: "INTERNAL_SERVER_ERROR",
-        message: "Error creating loan application",
+        message: "Error registering loan application",
         timestamp: new Date().toISOString(),
       },
     });
@@ -2293,3 +2566,214 @@ const generateLoanApplicationId = async () => {
 
   return `LA${year}${month}${String(sequence).padStart(4, "0")}`;
 };
+
+
+// Approve Loan Function
+exports.approveLoan = async (req, res) => {
+  try {
+    const { loanId } = req.params;
+    const { comments = '', rating } = req.body; // Optional comments and rating for agent reviews
+    const user = req.user; // From authentication middleware
+
+    logger.info("Approving loan", { loanId, userId: user.userId });
+
+    // Fetch and validate the loan
+    const loan = await Loan.findById(loanId).populate('clientUserId', 'personalInfo.email');
+    if (!loan) {
+      throw new AppError("Loan not found", 404, "LOAN_NOT_FOUND");
+    }
+
+    // Permission check: Only assigned agent or regional manager can approve
+    const isAgent = loan.assignedAgent?.toString() === user.userId;
+    const isRegionalManager = loan.assignedRegionalManager?.toString() === user.userId;
+    if (!isAgent && !isRegionalManager) {
+      throw new AppError("Unauthorized to approve this loan", 403, "UNAUTHORIZED");
+    }
+
+    // Determine approval stage and update accordingly
+    let newStage = loan.workflowState.currentStage;
+    if (loan.workflowState.currentStage === 'agent_review' && isAgent) {
+      loan.agentReview.status = 'Approved';
+      loan.agentReview.reviewDate = new Date();
+      loan.agentReview.reviewedBy = user.userId;
+      loan.agentReview.comments = comments;
+      if (rating) loan.agentReview.rating = rating;
+      newStage = 'regional_approval';
+    } else if (loan.workflowState.currentStage === 'regional_approval' && isRegionalManager) {
+      loan.regionalAdminApproval.status = 'Approved';
+      loan.regionalAdminApproval.approvalDate = new Date();
+      loan.regionalAdminApproval.approvedBy = user.userId;
+      loan.regionalAdminApproval.comments = comments;
+      newStage = 'approved';
+      loan.loanStatus = 'Approved'; // Final approval
+    } else {
+      throw new AppError("Loan is not in a stage that can be approved by you", 400, "INVALID_STAGE");
+    }
+
+    // Advance workflow and add audit entry
+    loan.advanceWorkflowStage(newStage, user.userId, comments);
+    loan.addAuditEntry('approved', user.userId, { stage: newStage, comments }, comments, req.ip, req.get("User-Agent"));
+
+    await loan.save();
+
+    // Send notifications
+    const clientEmail = loan.clientUserId?.personalInfo?.email;
+    if (clientEmail) {
+      try {
+        await sendEmail(
+          clientEmail,
+          "Loan Application Approved",
+          `Your loan application (${loan.loanApplicationId}) has been approved. 
+           Status: ${loan.loanStatus}
+           Next Steps: Agreement generation will follow.`
+        );
+      } catch (emailError) {
+        logger.error("Failed to send approval email to client", emailError, { loanId, clientEmail });
+      }
+    }
+
+    logger.info("Loan approved successfully", { loanId, newStage, userId: user.userId });
+
+    res.status(200).json({
+      success: true,
+      message: "Loan approved successfully",
+      data: {
+        loanId: loan._id,
+        loanApplicationId: loan.loanApplicationId,
+        currentStage: loan.workflowState.currentStage,
+        loanStatus: loan.loanStatus,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error("Error approving loan", error, { loanId: req.params.loanId, userId: req.user?.userId });
+
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.errorCode,
+          message: error.message,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error approving loan",
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+};
+
+// Reject Loan Function
+exports.rejectLoan = async (req, res) => {
+  try {
+    const { loanId } = req.params;
+    const { comments } = req.body; // Required reason for rejection
+    const user = req.user; // From authentication middleware
+
+    if (!comments) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: "INVALID_INPUT",
+          message: "Rejection comments are required",
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    logger.info("Rejecting loan", { loanId, userId: user.userId });
+
+    // Fetch and validate the loan
+    const loan = await Loan.findById(loanId).populate('clientUserId', 'personalInfo.email');
+    if (!loan) {
+      throw new AppError("Loan not found", 404, "LOAN_NOT_FOUND");
+    }
+
+    // Permission check: Only assigned agent or regional manager can reject
+    const isAgent = loan.assignedAgent?.toString() === user.userId;
+    const isRegionalManager = loan.assignedRegionalManager?.toString() === user.userId;
+    if (!isAgent && !isRegionalManager) {
+      throw new AppError("Unauthorized to reject this loan", 403, "UNAUTHORIZED");
+    }
+
+    // Update review status based on user role
+    if (isAgent) {
+      loan.agentReview.status = 'Rejected';
+      loan.agentReview.reviewDate = new Date();
+      loan.agentReview.reviewedBy = user.userId;
+      loan.agentReview.comments = comments;
+    } else if (isRegionalManager) {
+      loan.regionalAdminApproval.status = 'Rejected';
+      loan.regionalAdminApproval.approvalDate = new Date();
+      loan.regionalAdminApproval.approvedBy = user.userId;
+      loan.regionalAdminApproval.comments = comments;
+    }
+
+    // Block workflow, set status to Rejected, and add audit entry
+    loan.blockWorkflow(`Rejected by ${isAgent ? 'agent' : 'regional manager'}: ${comments}`, user.userId);
+    loan.loanStatus = 'Rejected';
+    loan.addAuditEntry('rejected', user.userId, { status: 'Rejected', comments }, comments, req.ip, req.get("User-Agent"));
+
+    await loan.save();
+
+    // Send notifications
+    const clientEmail = loan.clientUserId?.personalInfo?.email;
+    if (clientEmail) {
+      try {
+        await sendEmail(
+          clientEmail,
+          "Loan Application Rejected",
+          `Your loan application (${loan.loanApplicationId}) has been rejected. 
+           Reason: ${comments}
+           Please contact support for more details.`
+        );
+      } catch (emailError) {
+        logger.error("Failed to send rejection email to client", emailError, { loanId, clientEmail });
+      }
+    }
+
+    logger.info("Loan rejected successfully", { loanId, userId: user.userId });
+
+    res.status(200).json({
+      success: true,
+      message: "Loan rejected successfully",
+      data: {
+        loanId: loan._id,
+        loanApplicationId: loan.loanApplicationId,
+        loanStatus: loan.loanStatus,
+        rejectionReason: comments,
+      },
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    logger.error("Error rejecting loan", error, { loanId: req.params.loanId, userId: req.user?.userId });
+
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.errorCode,
+          message: error.message,
+          timestamp: new Date().toISOString(),
+        },
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: {
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Error rejecting loan",
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+};
+

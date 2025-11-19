@@ -408,7 +408,7 @@ exports.getClientByAssignerId = async (req, res) => {
 exports.getClientUserByVerifierId = async (req, res) => {
   try {
     const { id } = req.params;
-    const clientUsers = await ClientUser.find({ verifierId: id });
+    const clientUsers = await ClientUsers.find({ verifierId: id });
     res.json(clientUsers);
   } catch (error) {
     res.status(500).json({ message: error.message });

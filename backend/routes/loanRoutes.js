@@ -19,9 +19,14 @@ router.use("/agent/:agentId", agentRateLimit);
 // Loan application routes
 router.post(
   "/create",
-  requirePermissions(PERMISSIONS.CREATE_LOAN),
+  
   validate(loanSchemas.createLoan.body),
   loanController.createLoanApplication
+);
+
+router.post(
+  "/approve",
+  loanController.approveLoan
 );
 
 router.get(
@@ -146,5 +151,6 @@ router.post(
   requirePermissions(PERMISSIONS.GENERATE_AGREEMENTS),
   loanController.generateAgreement
 );
+
 
 module.exports = router;

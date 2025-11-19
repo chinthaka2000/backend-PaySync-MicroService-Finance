@@ -430,8 +430,8 @@ exports.clientLogin = async (req, res) => {
       });
     }
 
-    const ClientUser = require("../models/clientUsers");
-    const user = await ClientUser.findOne({ email }).select("+password");
+    const ClientUsers = require("../models/clientUsers");
+    const user = await ClientUsers.findOne({ email }).select("+password");
 
     if (!user) {
       return res.status(401).json({
@@ -455,8 +455,8 @@ exports.clientLogin = async (req, res) => {
         },
       });
     }
-
-    if (!user.isActive) {
+    
+    if (!user.status) {
       return res.status(401).json({
         success: false,
         error: {
