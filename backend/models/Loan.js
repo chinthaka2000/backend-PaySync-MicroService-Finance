@@ -1,61 +1,6 @@
 
 const mongoose = require('mongoose');
 
-const guarantorSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: true
-  },
-  idNumber: {
-    type: String,
-    required: true
-  },
-  contactNumber: {
-    type: String,
-    required: true
-  },
-  address: {
-    type: String,
-    required: true
-  },
-  relationship: {
-    type: String,
-    required: true
-  },
-  idDocumentUrl: String,
-  paysheetUrl: String
-});
-
-const paymentSchema = new mongoose.Schema({
-  paymentId: {
-    type: String
-  },
-  amount: {
-    type: Number,
-    required: true
-  },
-  paymentDate: {
-    type: Date,
-    required: true
-  },
-  paymentMethod: {
-    type: String,
-    enum: ['bank_transfer', 'online', 'cash', 'cheque'],
-    default: 'bank_transfer'
-  },
-  paymentSlipUrl: String,
-  status: {
-    type: String,
-    enum: ['Pending', 'Approved', 'Rejected'],
-    default: 'Pending'
-  },
-  approvedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Staff'
-  },
-  approvedAt: Date,
-  rejectedReason: String
-});
 
 const loanSchema = new mongoose.Schema({
   loanApplicationId: {
@@ -95,12 +40,14 @@ const loanSchema = new mongoose.Schema({
     enum: ['Monthly', 'Quarterly', 'Semi-annually', 'Annually'],
     default: 'Monthly'
   },
+  primaryGuarantor: { type: mongoose.Schema.Types.ObjectId, ref: 'Grantor' },
+  secondaryGuarantor: { type: mongoose.Schema.Types.ObjectId, ref: 'Grantor' },
+  payments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }],
   purpose: {
     type: String,
     required: true
   },
-  primaryGuarantor: guarantorSchema,
-  secondaryGuarantor: guarantorSchema,
+  
   borrowerPaysheetUrl: String,
   downPayment: {
     amount: {
@@ -168,7 +115,7 @@ const loanSchema = new mongoose.Schema({
     closureReason: String,
     finalAmount: Number
   },
-  paymentHistory: [paymentSchema],
+
   agentRating: Number,
 
   // Enhanced audit trail
