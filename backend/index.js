@@ -28,6 +28,7 @@ const staffRoutes = require("./routes/staffRoutes");
 const regionalAdminRoutes = require("./routes/regionalAdminRoutes");
 const moderateAdminRoutes = require("./routes/moderateAdminRoutes");
 const superAdminRoutes = require("./routes/superAdminRoutes");
+const ceoRoutes = require("./routes/ceoRoutes");
 const mobileAppRoutes = require("./routes/mobileAppRoutes");
 const healthRoutes = require("./routes/healthRoutes");
 
@@ -204,6 +205,7 @@ app.use("/api/agents", agentRoutes);
 app.use("/api/regional-admin", strictInputSanitizer, regionalAdminRoutes);
 app.use("/api/moderate-admin", strictInputSanitizer, moderateAdminRoutes);
 app.use("/api/super-admin", strictInputSanitizer, superAdminRoutes);
+app.use("/api/ceo", strictInputSanitizer, ceoRoutes);
 app.use("/api/mobile", mobileAppRoutes);
 app.use("/api/agreements", require('./routes/agreementRoutes'));
 app.use("/api/files", fileUploadRateLimit, fileUploadSanitizer, require('./routes/fileRoutes'));
